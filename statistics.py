@@ -1,6 +1,6 @@
 # %% Modules
 import pandas as pd
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import numpy as np
 
 # %% Obtain paths to statistics
@@ -23,32 +23,40 @@ for i in range(cases.shape[0]):
     cases.iloc[i,0] = str(cases.iloc[i,0])
     cases.iloc[i,0] = cases.iloc[i,0].zfill(3)
 
-    cases.iloc[i,1] = ('{}\\{}\\results_{}\\results_{}.xlsx'.format(pathDir,cases.iloc[i,0],cases.iloc[i,0],cases.iloc[i,0]))
+    cases.iloc[i,1] = ('{}\\{}\\results_{}\\data_{}.xlsx'.format(pathDir,cases.iloc[i,0],cases.iloc[i,0],cases.iloc[i,0]))
 
-# %% Import all data into dataframe
-cases = cases.assign(Area = np.nan,EquivDiam = np.nan, MajorAxisLength = np.nan, Cancer = np.nan, Slice = np.nan)
+# %% Create separate array for each Gleason grade
+healthy = np.zeros((1,4))
+g33 = np.zeros((1,4))
+g34 = np.zeros((1,4))
+g43 = np.zeros((1,4))
+g44 = np.zeros((1,4))
+g45 = np.zeros((1,4))
+g55 = np.zeros((1,4))
+
+# %% Import data and append it to arrays
 #for i in range(cases.shape[0]):
-cases['Area'] = cases['Area'].astype(object)
-cases['EquivDiam'] = cases['EquivDiam'].astype(object)
-cases['MajorAxisLength'] = cases['MajorAxisLength'].astype(object)
-temp = pd.read_excel(cases.iloc[0,1],sheet_name=9,usecols='A').values
-cases.loc[0,'Area'] = temp
-temp = pd.read_excel(cases.iloc[0,1],sheet_name=9,usecols='B').values
-cases.loc[0,'EquivDiam'] = temp
-temp = pd.read_excel(cases.iloc[0,1],sheet_name=9,usecols='C').values
-cases.loc[0,'MajorAxisLength'] = temp
-
-print(cases.head())
-
-# %% Create separate array for each Gleason score and add values
-healthy = []
-g33 = []
-g34 = []
-g43 = []
-g44 = []
-g45 = []
-g55 = []
+temp = pd.read_excel(cases.loc[10,'statPath'],usecols='A:D').values
 
 # Assign values
+for i in range(temp.shape[0]):
+    gg = temp[i,3]
+    if temp[i,3] == 0:
+        healthy = np.vstack((healthy,temp[i,:]))
+    elif temp[i,3] == 33:
+        g33 = np.vstack((healthy,temp[i,:]))
+    elif temp[i,3] == 34:
+        g34 = np.vstack((healthy,temp[i,:]))
+    elif temp[i,3] == 44:
+        g44 = np.vstack((healthy,temp[i,:]))
+    elif temp[i,3] == 45:
+        g45 = np.vstack((healthy,temp[i,:]))
+    elif temp[i,3] == 55:
+        g55 = np.vstack((healthy,temp[i,:]))
 
 # %% Plot Histograms
+fig, ax = plt.subplots(2, 1, sharex=True)
+bins = np.linspace(0,1,1000)
+ax[0].hist(healthy[1:healthy.shape[0],0],bins=bins)
+fig.show()
+# %%
