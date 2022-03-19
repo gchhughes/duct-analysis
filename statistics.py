@@ -2,6 +2,7 @@
 import pandas as pd
 import matplotlib as plt
 import numpy as np
+
 # %% Obtain paths to statistics
 pathDir = r'C:\Users\griff\Box\CASIT\Files for Derrick\duct-analysis'
 trackerDir = pathDir + '\Tracker.xlsx'
@@ -23,17 +24,31 @@ for i in range(cases.shape[0]):
     cases.iloc[i,0] = cases.iloc[i,0].zfill(3)
 
     cases.iloc[i,1] = ('{}\\{}\\results_{}\\results_{}.xlsx'.format(pathDir,cases.iloc[i,0],cases.iloc[i,0],cases.iloc[i,0]))
+
 # %% Import all data into dataframe
 cases = cases.assign(Area = np.nan,EquivDiam = np.nan, MajorAxisLength = np.nan, Cancer = np.nan, Slice = np.nan)
 #for i in range(cases.shape[0]):
+cases['Area'] = cases['Area'].astype(object)
+cases['EquivDiam'] = cases['EquivDiam'].astype(object)
+cases['MajorAxisLength'] = cases['MajorAxisLength'].astype(object)
+temp = pd.read_excel(cases.iloc[0,1],sheet_name=9,usecols='A').values
+cases.loc[0,'Area'] = temp
+temp = pd.read_excel(cases.iloc[0,1],sheet_name=9,usecols='B').values
+cases.loc[0,'EquivDiam'] = temp
+temp = pd.read_excel(cases.iloc[0,1],sheet_name=9,usecols='C').values
+cases.loc[0,'MajorAxisLength'] = temp
 
-# %% Create separate df for each Gleason score
-healthy = pd.DataFrame(columns = ['Area','EquivDiam','MajorAxisLength'])
-g33 = pd.DataFrame(columns = ['Area','EquivDiam','MajorAxisLength'])
-g34 = pd.DataFrame(columns = ['Area','EquivDiam','MajorAxisLength'])
-g43 = pd.DataFrame(columns = ['Area','EquivDiam','MajorAxisLength'])
-g44 = pd.DataFrame(columns = ['Area','EquivDiam','MajorAxisLength'])
-g45 = pd.DataFrame(columns = ['Area','EquivDiam','MajorAxisLength'])
-g55 = pd.DataFrame(columns = ['Area','EquivDiam','MajorAxisLength'])
+print(cases.head())
+
+# %% Create separate array for each Gleason score and add values
+healthy = []
+g33 = []
+g34 = []
+g43 = []
+g44 = []
+g45 = []
+g55 = []
+
+# Assign values
 
 # %% Plot Histograms
