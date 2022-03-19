@@ -56,7 +56,12 @@ for i in range(temp.shape[0]):
 
 # %% Plot Histograms
 fig, ax = plt.subplots(2, 1, sharex=True)
-bins = np.linspace(0,1,1000)
+cancer = [g33[1:g33.shape[0],0],g34[1:g34.shape[0],0],g44[1:g44.shape[0],0],g45[1:g45.shape[0],0]]
+bins = np.linspace(0,0.125,1000)
+colors = ['b','g','y','orange']
+labels = ['3+3','3+4','4+4','4+5']
 ax[0].hist(healthy[1:healthy.shape[0],0],bins=bins)
+ax[1].hist(cancer,bins=bins,color=colors,label=labels)
+ax[1].legend()
 fig.show()
 # %%
