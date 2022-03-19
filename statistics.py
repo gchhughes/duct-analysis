@@ -23,6 +23,8 @@ for i in range(cases.shape[0]):
     cases.iloc[i,0] = cases.iloc[i,0].zfill(3)
 
     cases.iloc[i,1] = ('{}\\{}\\results_{}\\results_{}.xlsx'.format(pathDir,cases.iloc[i,0],cases.iloc[i,0],cases.iloc[i,0]))
-#%% 
-for i in range(cases.shape[0]):
-    
+#%% Import all data into dataframe
+cases = cases.assign(Area = np.nan,EquivDiam = np.nan, MajorAxisLength = np.nan, Cancer = np.nan, Slice = np.nan)
+#for i in range(cases.shape[0]):
+
+# %%
