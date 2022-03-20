@@ -35,32 +35,39 @@ g45 = np.zeros((1,4))
 g55 = np.zeros((1,4))
 
 # %% Import data and append it to arrays
-#for i in range(cases.shape[0]):
-temp = pd.read_excel(cases.loc[10,'statPath'],usecols='A:D').values
+max = np.zeros((cases.shape[0],3)) # Area, Equivalent Diamater, Major Axis Length
 
-# Assign values
-for i in range(temp.shape[0]):
-    gg = temp[i,3]
-    if temp[i,3] == 0:
-        healthy = np.vstack((healthy,temp[i,:]))
-    elif temp[i,3] == 33:
-        g33 = np.vstack((healthy,temp[i,:]))
-    elif temp[i,3] == 34:
-        g34 = np.vstack((healthy,temp[i,:]))
-    elif temp[i,3] == 44:
-        g44 = np.vstack((healthy,temp[i,:]))
-    elif temp[i,3] == 45:
-        g45 = np.vstack((healthy,temp[i,:]))
-    elif temp[i,3] == 55:
-        g55 = np.vstack((healthy,temp[i,:]))
+for i in range(cases.shape[0]):
+    temp = pd.read_excel(cases.loc[i,'statPath'],usecols='A:D').values
+    max[i,0] = np.max(temp[:,0])
+    max[i,1] = np.max(temp[:,1])
+    max[i,2] = np.max(temp[:,2])
+
+    # Assign values
+    for i in range(temp.shape[0]):
+        if temp[i,3] == 0:
+            healthy = np.vstack((healthy,temp[i,:]))
+        elif temp[i,3] == 33:
+            g33 = np.vstack((healthy,temp[i,:]))
+        elif temp[i,3] == 34:
+            g34 = np.vstack((healthy,temp[i,:]))
+        elif temp[i,3] == 44:
+            g44 = np.vstack((healthy,temp[i,:]))
+        elif temp[i,3] == 45:
+            g45 = np.vstack((healthy,temp[i,:]))
+        elif temp[i,3] == 55:
+            g55 = np.vstack((healthy,temp[i,:]))
 
 # %% Plot Histograms
 fig, ax = plt.subplots(2, 1, sharex=True)
 cancer = [g33[1:g33.shape[0],0],g34[1:g34.shape[0],0],g44[1:g44.shape[0],0],g45[1:g45.shape[0],0]]
+# bins = np.linspace(0,np.max(max[:,0]),1000)
 bins = np.linspace(0,0.125,1000)
+
 colors = ['b','g','y','orange']
 labels = ['3+3','3+4','4+4','4+5']
-ax[0].hist(healthy[1:healthy.shape[0],0],bins=bins)
+ax[0].hist(healthy[1:healthy.shape[0],0],bins=bins,label='Healthy')
+ax[0].legend()
 ax[1].hist(cancer,bins=bins,color=colors,label=labels)
 ax[1].legend()
 fig.show()
