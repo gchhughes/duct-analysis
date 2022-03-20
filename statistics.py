@@ -47,27 +47,51 @@ for i in range(cases.shape[0]):
     max[i,2] = np.max(temp[:,2])
 
     # Assign values
-    for i in range(temp.shape[0]):
-        if temp[i,3] == 0:
-            healthy = np.vstack((healthy,temp[i,:]))
-        elif temp[i,3] == 33:
-            g33 = np.vstack((g33,temp[i,:]))
-            totCancer = np.vstack((totCancer,temp[i,:]))
-        elif temp[i,3] == 34:
-            g34 = np.vstack((g34,temp[i,:]))
-            totCancer = np.vstack((totCancer,temp[i,:]))
-        elif temp[i,3] == 44:
-            g44 = np.vstack((g44,temp[i,:]))
-            totCancer = np.vstack((totCancer,temp[i,:]))
-        elif temp[i,3] == 45:
-            g45 = np.vstack((g45,temp[i,:]))
-            totCancer = np.vstack((totCancer,temp[i,:]))
-        elif temp[i,3] == 54:
-            g54 = np.vstack((g54,temp[i,:]))
-            totCancer = np.vstack((totCancer,temp[i,:]))
-        elif temp[i,3] == 55:
-            g55 = np.vstack((g55,temp[i,:]))
-            totCancer = np.vstack((totCancer,temp[i,:]))
+    for ii in range(temp.shape[0]):
+        if temp[ii,3] == 0:
+            healthy = np.vstack((healthy,temp[ii,:]))
+        elif temp[ii,3] == 33:
+            g33 = np.vstack((g33,temp[ii,:]))
+            totCancer = np.vstack((totCancer,temp[ii,:]))
+        elif temp[ii,3] == 34:
+            g34 = np.vstack((g34,temp[ii,:]))
+            totCancer = np.vstack((totCancer,temp[ii,:]))
+        elif temp[ii,3] == 44:
+            g44 = np.vstack((g44,temp[ii,:]))
+            totCancer = np.vstack((totCancer,temp[ii,:]))
+        elif temp[ii,3] == 45:
+            g45 = np.vstack((g45,temp[ii,:]))
+            totCancer = np.vstack((totCancer,temp[ii,:]))
+        elif temp[ii,3] == 54:
+            g54 = np.vstack((g54,temp[ii,:]))
+            totCancer = np.vstack((totCancer,temp[ii,:]))
+        elif temp[ii,3] == 55:
+            g55 = np.vstack((g55,temp[ii,:]))
+            totCancer = np.vstack((totCancer,temp[ii,:]))
+
+"""
+# %% Import data and create logicals for each type of Gleason Grade
+max = np.zeros((cases.shape[0],3)) # Area, Equivalent Diamater, Major Axis Length
+cases = cases.assign(area=np.nan)
+cases = cases.assign(ED=np.nan)
+cases = cases.assign(MAL=np.nan)
+cases = cases.assign(gg=np.nan)
+cases['area'] = cases['area'].astype(object)
+cases['ED'] = cases['ED'].astype(object)
+cases['MAL'] = cases['MAL'].astype(object)
+cases['gg'] = cases['gg'].astype(object)
+for i in range(cases.shape[0]):
+    cases.loc[i,'area'] = pd.read_excel(cases.loc[i,'statPath'],usecols='A').values
+    cases.loc[i,'ED'] = pd.read_excel(cases.loc[i,'statPath'],usecols='B').values
+    cases.loc[i,'MAL'] = pd.read_excel(cases.loc[i,'statPath'],usecols='C').values
+    cases.loc[i,'gg'] = pd.read_excel(cases.loc[i,'statPath'],usecols='D').values
+
+# %% 
+for i in range(cases.shape[0]):
+    for ii in range(len(cases.loc[i,'gg'])):
+        if cases.loc[i,'gg'][ii] == 0:
+            healthy = np.vstack((healthy,cases.loc[i,'gg'][ii]))
+"""
 
 # %% Check arrays
 print(g33)
@@ -87,7 +111,7 @@ g44 = g44[1:g44.shape[0],:]
 # g45 = g45[1:g45.shape[0],:]
 # g54 = g54[1:g54.shape[0],:]
 # g55 = g55[1:g55.shape[0],:]
-totCancer = healthy[1:healthy.shape[0],:]
+totCancer = totCancer[1:totCancer.shape[0],:]
 
 print(g33.shape[0]+g34.shape[0]+g44.shape[0])
 print(totCancer.shape[0])
