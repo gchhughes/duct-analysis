@@ -96,23 +96,23 @@ g55 = g55[1:g55.shape[0],:]
 totCancer = totCancer[1:totCancer.shape[0],:]
 
 # %% Plot Histograms
-i = 0 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
+i = 2 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
 fig, ax = plt.subplots(2, 1, sharex=True)
 plt1 = [healthy[:,i],totCancer[:,i]]
-# plt2 = [g33[:,i],g34[:,i],g43[:,i],g44[:,i],g45[:,i],g54[:,i],g55[:,i]]
-# plt2 = [g33[:,i],g34[:,i],g43[:,i],g44[:,i]]
-# bins = np.linspace(0,np.max(max[:,0]),1000)
-bins = np.linspace(0,0.25,100)
-# colors = ['b','g','y','orange','red','magenta','purple']
-# labels = ['3+3','3+4','4+3','4+4','4+5','5+4','5+5']
-# colors = ['b','g','y','orange']
-# labels = ['3+3','3+4','4+3','4+4']
+plt2 = [g33[:,i],g34[:,i],g43[:,i],g44[:,i]]
+bins = np.linspace(0,0.6,100)
+colors = ['b','g','r','k']
+labels = ['3+3','3+4','4+3','4+4']
 
 ax[0].hist(plt1,bins=bins,color=['b','r'],label=['Healthy','Total Cancer'])
 ax[0].legend()
 ax[1].hist(plt2,bins=bins,color=colors,label=labels)
-# ax[1].hist([g34[:,i]],bins=bins)
 ax[1].legend(title='Gleason Grade')
+
+fig.supxlabel('Major Axis Length (mm)')
+fig.supylabel('Frequency')
+fig.suptitle('Comparison of Cancerous and Healthy Duct Sizes')
+
 fig.show()
 
 # %% Import data using append vs vstack
@@ -283,10 +283,8 @@ How to interpret KS Statistic:
 """
 # %% Print KS Test Results;
 for i in range(stat.shape[0]):
-    for ii in range(stat.shape[1]):
-        print('MEAN stat: {}; pval: {}'.format(stat[i,ii],pval[i,ii]))
-        print('Equiv Diam stat: {}; pval: {}'.format(stat[i,ii],pval[i,ii]))
-        print('MAL stat: {}; pval: {}'.format(stat[i,ii],pval[i,ii]))
+    ii = 2
+    print('MAL stat: {}; pval: {}'.format(stat[i,ii],pval[i,ii]))
 # %% Mean values for each measurement
 avg = np.zeros((5,3))
 avg[0,0] = np.mean(healthy[:,0],axis=0)
