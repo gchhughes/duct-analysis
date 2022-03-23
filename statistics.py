@@ -96,25 +96,30 @@ print(g55.shape)
 
 # %% Plot Histograms
 i = 0 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
-fig, ax = plt.subplots(2, 1, sharex=True)
-plt1 = [healthy[:,i],totCancer[:,i]]
-plt2 = [g33[:,i],g34[:,i],g43[:,i],g44[:,i]]
+
 bins = np.linspace(0,1,100)
 # bins = np.linspace(0,np.max(max[:,i]),50)
 # logbins = np.logspace(np.log10(0.0001),np.log10(bins.max()),len(bins))
 colors = ['b','g','r','k']
 labels = ['3+3','3+4','4+3','4+4']
+xLbl = ['Area (mm^2)','Equivalent Diameter (mm)','Major Axis Length (mm)']
 
-ax[0].hist(plt1,bins=bins,color=['b','r'],label=['Healthy','Total Cancer'],density=True)
-ax[0].legend()
-ax[1].hist(plt2,bins=bins,color=colors,label=labels,density=True)
-ax[1].legend(title='Gleason Grade')
+for i in range(3):
+    fig, ax = plt.subplots(2, 1, sharex=True)
+    plt1 = [healthy[:,i],totCancer[:,i]]
+    plt2 = [g33[:,i],g34[:,i],g43[:,i],g44[:,i]]
 
-fig.supxlabel('Area (mm^2)')
-fig.supylabel('Frequency')
-fig.suptitle('Comparison of Cancerous and Healthy Duct Sizes')
+    ax[0].hist(plt1,bins=bins,color=['b','r'],label=['Healthy','Total Cancer'],density=True)
+    ax[0].legend()
+    ax[1].hist(plt2,bins=bins,color=colors,label=labels,density=True)
+    ax[1].legend(title='Gleason Grade')
 
-fig.show()
+
+    fig.supxlabel(xLbl[i])
+    fig.supylabel('Frequency')
+    fig.suptitle('Comparison of Cancerous and Healthy Duct Sizes')
+
+    fig.show()
 
 # %% Z-Score the data
 zhealthy = zscore(healthy,ddof=1)
