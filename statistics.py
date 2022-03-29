@@ -2,7 +2,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import ks_2samp, zscore
+from scipy.stats import ks_2samp, zscore, ttest_rel
 
 # %% Obtain paths to statistics
 pathDir = r'C:\Users\griff\Box\CASIT\Files for Derrick\duct-analysis'
@@ -20,29 +20,32 @@ cases = cases.reset_index(drop=True)
 
 # Create path to each case's statistics
 cases['statPath'] = pd.Series(dtype='string')
+cases['dataPath'] = pd.Series(dtype='string')
 for i in range(cases.shape[0]):
     cases.iloc[i,0] = str(cases.iloc[i,0])
     cases.iloc[i,0] = cases.iloc[i,0].zfill(3)
-
+    
     cases.iloc[i,1] = ('{}\\{}\\results_{}\\data_{}.xlsx'.format(pathDir,cases.iloc[i,0],cases.iloc[i,0],cases.iloc[i,0]))
+    cases.iloc[i,2] = ('{}\\data\\data_{}.xlsx'.format(pathDir,cases.iloc[i,0]))
 
 print(cases.head())
 
 # %% Import data using np.r_
-healthy = np.zeros((1,4))
-g33 = np.zeros((1,4))
-g34 = np.zeros((1,4))
-g43 = np.zeros((1,4))
-g44 = np.zeros((1,4))
-g45 = np.zeros((1,4))
-g54 = np.zeros((1,4))
-g55 = np.zeros((1,4))
-totCancer = np.zeros((1,4))
+healthy = np.zeros((1,5))
+g33 = np.zeros((1,5))
+g34 = np.zeros((1,5))
+g43 = np.zeros((1,5))
+g44 = np.zeros((1,5))
+g45 = np.zeros((1,5))
+g54 = np.zeros((1,5))
+g55 = np.zeros((1,5))
+totCancer = np.zeros((1,5))
+density = np.zeros((1,2))
 
 max = np.zeros((cases.shape[0],3)) # Area, Equivalent Diamater, Major Axis Length
 
 for i in range(cases.shape[0]):
-    temp = pd.read_excel(cases.loc[i,'statPath'],usecols='A:D').values
+    temp = pd.read_excel(cases.loc[i,'dataPath'],usecols='A:E').values
     max[i,0] = np.max(temp[:,0])
     max[i,1] = np.max(temp[:,1])
     max[i,2] = np.max(temp[:,2])
@@ -50,29 +53,39 @@ for i in range(cases.shape[0]):
     print(temp.shape)
     # Assign values
     for ii in range(temp.shape[0]):
-        if temp[ii,3] == 0:
+
+        # Duct sizes
+        if temp[ii,4] == 0:
             healthy = np.r_['0,2',healthy,temp[ii,:]]
-        elif temp[ii,3] == 33:
+        elif temp[ii,4] == 33:
             g33 = np.r_['0,2',g33,temp[ii,:]]
             totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,3] == 34:
+        elif temp[ii,4] == 34:
             g34 = np.r_['0,2',g34,temp[ii,:]]
             totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,3] == 43:
+        elif temp[ii,4] == 43:
             g43 = np.r_['0,2',g43,temp[ii,:]]
             totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,3] == 44:
+        elif temp[ii,4] == 44:
             g44 = np.r_['0,2',g44,temp[ii,:]]
             totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,3] == 45:
+        elif temp[ii,4] == 45:
             g45 = np.r_['0,2',g45,temp[ii,:]]
             totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,3] == 54:
+        elif temp[ii,4] == 54:
             g54 = np.r_['0,2',g54,temp[ii,:]]
             totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,3] == 55:
+        elif temp[ii,4] == 55:
             g55 = np.r_['0,2',g55,temp[ii,:]]
             totCancer = np.r_['0,2',totCancer,temp[ii,:]]
+
+        # Density
+        if ii == 0:
+            tempDensity = temp[ii,3:5]
+            density = np.r_['0,2',density,tempDensity]
+        elif tempDensity[0] != temp[ii,3]:
+            tempDensity = temp[ii,3:5]
+            density = np.r_['0,2',density,tempDensity]
 
 # %% Remove first row
 healthy = healthy[1:healthy.shape[0],:]
@@ -84,8 +97,10 @@ g45 = g45[1:g45.shape[0],:]
 g54 = g54[1:g54.shape[0],:]
 g55 = g55[1:g55.shape[0],:]
 totCancer = totCancer[1:totCancer.shape[0],:]
+density = density[1:totCancer.shape[0],:]
 
 # %% Check arrays
+print(healthy.shape)
 print(g33.shape)
 print(g34.shape)
 print(g43.shape)
@@ -93,6 +108,7 @@ print(g44.shape)
 print(g45.shape)
 print(g54.shape)
 print(g55.shape)
+print(density.shape)
 
 # %% Plot Histograms
 i = 0 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
@@ -146,16 +162,33 @@ How to interpret KS Statistic:
 - "If the KS statistic is small or the p-value is high, then we cannot reject the null hypothesis in favor of the alternative."
 """
 # %% Print KS Test Results;
-for i in range(stat.shape[0]):
-    ii = 0
-    print('MAL stat: {}; pval: {}'.format(stat[i,ii],pval[i,ii]))
+ii = 0 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
+dataType = ['Area', 'Equivalent Diameter', 'Major Axis Length']
 
-# %% Mean values for each measurement
-avg = np.zeros((5,3))
+for i in range(stat.shape[0]):
+    print('{} stat: {}; pval: {}'.format(dataType[ii],stat[i,ii],pval[i,ii]))
+
+# %% Mean/StD values for each measurement
+avg = np.zeros((2,3))
+sd = np.zeros((2,3))
+avgDensity = np.zeros(2)
+sdDensity = np.zeros(2)
+
 avg[0,0] = np.mean(healthy[:,0],axis=0)
 avg[0,1] = np.mean(healthy[:,1],axis=0)
 avg[0,2] = np.mean(healthy[:,2],axis=0)
 avg[1,0] = np.mean(totCancer[:,0],axis=0)
 avg[1,1] = np.mean(totCancer[:,1],axis=0)
 avg[1,2] = np.mean(totCancer[:,2],axis=0)
-# %% 
+
+sd[0,0] = np.std(healthy[:,0],axis=0)
+sd[0,1] = np.std(healthy[:,1],axis=0)
+sd[0,2] = np.std(healthy[:,2],axis=0)
+sd[1,0] = np.std(totCancer[:,0],axis=0)
+sd[1,1] = np.std(totCancer[:,1],axis=0)
+sd[1,2] = np.std(totCancer[:,2],axis=0)
+
+avgDensity = np.mean(density[:,0])
+sdDensity = np.std(density[:,0])
+
+# %% T-Test
