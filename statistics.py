@@ -107,16 +107,27 @@ for key in totDucts:
     totDucts[key] = totDucts[key][1:totDucts[key].shape[0],:]
     print('{}: {}'.format(key,totDucts[key].shape))
 
-# %% Density Healthy Logical
-logical = np.zeros(density.shape[0]).astype('bool')
-lgcl33 = np.zeros(density.shape[0]).astype('bool')
-for i in range(density.shape[0]):
-    if density[i,1] == 0:
-        logical[i] = 1
-    if density[i,1] == 33:
-        lgcl33[i] = 1
-logical = logical.astype('bool')
-lgcl33 = lgcl33.astype('bool')
+# %% Separate density by healthy vs cancer (and no 3+3)
+# Totals
+totDucts['density0Bool'] = np.zeros(totDucts['density'].shape[0]).astype('bool')
+totDucts['density33Bool'] = np.zeros(totDucts['density'].shape[0]).astype('bool')
+
+for i in range(totDucts['density'].shape[0]):
+    if totDucts['density'][i,1] == 0:
+        totDucts['density0Bool'][i] = True
+    if totDucts['density'][i,1] == 33:
+        totDucts['density33Bool'][i] = True
+
+# Do the same for each patient
+for pt in data:
+    data[pt]['density0Bool'] = np.zeros(data[pt]['density'].shape[0]).astype('bool')
+    data[pt]['density33Bool'] = np.zeros(data[pt]['density'].shape[0]).astype('bool')
+
+    for i in range(data[pt]['density'].shape[0]):
+        if data[pt]['density'][i,1] == 0:
+            data[pt]['density0Bool'][i] = True
+        if data[pt]['density'][i,1] == 33:
+            data[pt]['density33Bool'][i] = True
 
 # %% Mean/StD values for each measurement
 avg = np.zeros((2,3))
