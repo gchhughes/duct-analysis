@@ -4,19 +4,38 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import ks_2samp, zscore, ttest_rel
 
+# %% Messing around with dictionaries
+pathDir = r'C:\Users\griff\Box\CASIT\Files for Derrick\duct-analysis'
+trackerDir = pathDir + '\Tracker.xlsx'
+data = {} # Going to use nested dictionaries
+
+# Find completed cases using Tracker spreadsheet
+tracker = pd.read_excel(trackerDir,sheet_name=0)
+logical = np.zeros(tracker.shape[0]).astype('bool')
+for i in range(tracker.shape[0]):
+    if tracker.iloc[i,2] == 1:
+        logical[i] = True
+
+temp = tracker.loc[logical,'ID'].values
+for i in range(len(temp)):
+    data[i] = {}
+    data[i]['id'] = (str(temp[i]).zfill(3))
+    data[i]['dataPath'] = ('{}\\data\\data_{}.xlsx'.format(pathDir,data[i]['id']))
+
 # %% Obtain paths to statistics
 pathDir = r'C:\Users\griff\Box\CASIT\Files for Derrick\duct-analysis'
 trackerDir = pathDir + '\Tracker.xlsx'
 
 # Find completed cases using Tracker spreadsheet
 tracker = pd.read_excel(trackerDir,sheet_name=0)
-logical = np.zeros(tracker.shape[0])
+print(tracker.head())
+logical = np.zeros(tracker.shape[0]).astype('bool')
 for i in range(tracker.shape[0]):
     if tracker.iloc[i,2] == 1:
         logical[i] = 1
-logical = logical.astype('bool')
 cases = pd.DataFrame(tracker.loc[logical,'ID'])
 cases = cases.reset_index(drop=True)
+print(cases.ID)
 
 # Create path to each case's statistics
 cases['statPath'] = pd.Series(dtype='string')
@@ -264,7 +283,6 @@ for i in range(stat.shape[0]):
 
 
 # %% Density Boxplot
-exclude = 
 plt.boxplot([density[logical,0],density[log33,0]])
 plt.show()
 
