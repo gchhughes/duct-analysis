@@ -87,6 +87,28 @@ for i in range(cases.shape[0]):
             tempDensity = temp[ii,3:5]
             density = np.r_['0,2',density,tempDensity]
 
+# %% Test dataframes for each patient
+cases['data'] = pd.Series(dtype='object')
+
+healthy = np.zeros((1,5))
+
+max = np.zeros((cases.shape[0],3)) # Area, Equivalent Diamater, Major Axis Length
+
+for i in range(1):
+    temp = pd.read_excel(cases.loc[i,'dataPath'],usecols='A:E').values
+    cases.loc[i,'data'] = temp
+    max[i,0] = np.max(temp[:,0])
+    max[i,1] = np.max(temp[:,1])
+    max[i,2] = np.max(temp[:,2])
+
+    print(temp.shape)
+    # Assign values
+    for ii in range(temp.shape[0]):
+
+        # Duct sizes
+        if temp[ii,4] == 0:
+            healthy = np.r_['0,2',healthy,temp[ii,:]]
+        
 # %% Remove first row
 healthy = healthy[1:healthy.shape[0],:]
 g33 = g33[1:g33.shape[0],:]
@@ -109,6 +131,50 @@ print(g45.shape)
 print(g54.shape)
 print(g55.shape)
 print(density.shape)
+
+# %% Density Healthy Logical
+logical = np.zeros(density.shape[0]).astype('bool')
+lgcl33 = np.zeros(density.shape[0]).astype('bool')
+for i in range(density.shape[0]):
+    if density[i,1] == 0:
+        logical[i] = 1
+    if density[i,1] == 33:
+        lgcl33[i] = 1
+logical = logical.astype('bool')
+lgcl33 = lgcl33.astype('bool')
+
+# %% Mean/StD values for each measurement
+avg = np.zeros((2,3))
+med = np.zeros((2,3))
+sd = np.zeros((2,3))
+avgDensity = np.zeros(2)
+sdDensity = np.zeros(2)
+
+avg[0,0] = np.mean(healthy[:,0],axis=0)
+avg[0,1] = np.mean(healthy[:,1],axis=0)
+avg[0,2] = np.mean(healthy[:,2],axis=0)
+avg[1,0] = np.mean(totCancer[:,0],axis=0)
+avg[1,1] = np.mean(totCancer[:,1],axis=0)
+avg[1,2] = np.mean(totCancer[:,2],axis=0)
+
+med[0,0] = np.median(healthy[:,0],axis=0)
+med[0,1] = np.median(healthy[:,1],axis=0)
+med[0,2] = np.median(healthy[:,2],axis=0)
+med[1,0] = np.median(totCancer[:,0],axis=0)
+med[1,1] = np.median(totCancer[:,1],axis=0)
+med[1,2] = np.median(totCancer[:,2],axis=0)
+
+sd[0,0] = np.std(healthy[:,0],axis=0)
+sd[0,1] = np.std(healthy[:,1],axis=0)
+sd[0,2] = np.std(healthy[:,2],axis=0)
+sd[1,0] = np.std(totCancer[:,0],axis=0)
+sd[1,1] = np.std(totCancer[:,1],axis=0)
+sd[1,2] = np.std(totCancer[:,2],axis=0)
+
+avgDensity[0] = np.mean(density[logical,0])
+avgDensity[1] = np.mean(density[~logical,0])
+sdDensity[0] = np.std(density[logical,0])
+sdDensity[1] = np.std(density[~logical,0])
 
 # %% Plot Histograms
 i = 0 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
@@ -137,6 +203,33 @@ for i in range(3):
 
     fig.show()
 
+# %% Boxplots
+i = 0
+plt.boxplot([healthy[:,i],totCancer[:,i],g33[:,i],g34[:,i],g43[:,i],g44[:,i]])
+plt.ylim((0,0.1))
+plt.show()
+
+# %%
+plt.boxplot(healthy[:,i])
+plt.title('Healthy')
+plt.show()
+plt.boxplot(totCancer[:,i])
+plt.title('totCancer')
+plt.show()
+plt.boxplot(g33[:,i])
+plt.title('G33')
+plt.show()
+plt.boxplot(g34[:,i])
+plt.title('G34')
+plt.show()
+plt.boxplot(g43[:,i])
+plt.title('G43')
+plt.show()
+plt.boxplot(g44[:,i])
+plt.title('G44')
+plt.show()
+
+
 # %% Z-Score the data
 zhealthy = zscore(healthy,ddof=1)
 zg33 = zscore(g33,ddof=1)
@@ -162,33 +255,17 @@ How to interpret KS Statistic:
 - "If the KS statistic is small or the p-value is high, then we cannot reject the null hypothesis in favor of the alternative."
 """
 # %% Print KS Test Results;
-ii = 0 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
+ii = 2 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
 dataType = ['Area', 'Equivalent Diameter', 'Major Axis Length']
 
 for i in range(stat.shape[0]):
     print('{} stat: {}; pval: {}'.format(dataType[ii],stat[i,ii],pval[i,ii]))
 
-# %% Mean/StD values for each measurement
-avg = np.zeros((2,3))
-sd = np.zeros((2,3))
-avgDensity = np.zeros(2)
-sdDensity = np.zeros(2)
 
-avg[0,0] = np.mean(healthy[:,0],axis=0)
-avg[0,1] = np.mean(healthy[:,1],axis=0)
-avg[0,2] = np.mean(healthy[:,2],axis=0)
-avg[1,0] = np.mean(totCancer[:,0],axis=0)
-avg[1,1] = np.mean(totCancer[:,1],axis=0)
-avg[1,2] = np.mean(totCancer[:,2],axis=0)
 
-sd[0,0] = np.std(healthy[:,0],axis=0)
-sd[0,1] = np.std(healthy[:,1],axis=0)
-sd[0,2] = np.std(healthy[:,2],axis=0)
-sd[1,0] = np.std(totCancer[:,0],axis=0)
-sd[1,1] = np.std(totCancer[:,1],axis=0)
-sd[1,2] = np.std(totCancer[:,2],axis=0)
+# %% Density Boxplot
+exclude = 
+plt.boxplot([density[logical,0],density[log33,0]])
+plt.show()
 
-avgDensity = np.mean(density[:,0])
-sdDensity = np.std(density[:,0])
-
-# %% T-Test
+# %% 200 um Dataset
