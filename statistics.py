@@ -23,6 +23,7 @@ for i in range(len(temp)):
     data[i]['dataPath'] = '{}\\data\\data_{}.xlsx'.format(pathDir,data[i]['id'])
 
 # %% Import data using np.r_
+measurements = ['Area (mm^2)','Equivalent Diameter (mm)','Major Axis Length (mm)']
 grades = [0,33,34,43,44,45,54,55]
 totDucts = {}
 
@@ -32,7 +33,7 @@ for grade in grades:
 
 totDucts['cancerNo33'] = np.zeros((1,5))
 totDucts['cancer33'] = np.zeros((1,5))
-totDucts['density'] = np.zeros((1,2))
+totDucts['ratio'] = np.zeros((1,2))
 
 maxVal = np.zeros((len(data),3)) # Area, Equivalent Diamater, Major Axis Length
 
@@ -50,7 +51,7 @@ for i in range(len(data)):
 
     data[i]['cancerNo33'] = np.zeros((1,5))
     data[i]['cancer33'] = np.zeros((1,5))
-    data[i]['density'] = np.zeros((1,2))
+    data[i]['ratio'] = np.zeros((1,2))
 
     print('{}: {}'.format(data[i]['id'],data[i]['rawData'].shape))
 
@@ -75,15 +76,15 @@ for i in range(len(data)):
         elif data[i]['rawData'][ii,4] == 55:
             data[i][55] = np.r_['0,2',data[i][55],data[i]['rawData'][ii,:]]
 
-        # Density (Need to update if column headers change)
-        if ii == 0:
-            tempDensity = data[i]['rawData'][ii,3:5]
-            totDucts['density'] = np.r_['0,2',totDucts['density'],tempDensity]
-            data[i]['density'] = np.r_['0,2',data[i]['density'],tempDensity]
-        elif tempDensity[0] != data[i]['rawData'][ii,3]:
-            tempDensity = data[i]['rawData'][ii,3:5]
-            totDucts['density'] = np.r_['0,2',totDucts['density'],tempDensity]
-            data[i]['density'] = np.r_['0,2',data[i]['density'],tempDensity]
+        # Ductal Ratio (Need to update if column headers change)
+        if ii == 0: # Save first ratio we see
+            tempRatio = data[i]['rawData'][ii,3:5]
+            totDucts['ratio'] = np.r_['0,2',totDucts['ratio'],tempRatio]
+            data[i]['ratio'] = np.r_['0,2',data[i]['ratio'],tempRatio]
+        elif tempRatio[0] != data[i]['rawData'][ii,3]: # Don't update unless it changes
+            tempRatio = data[i]['rawData'][ii,3:5]
+            totDucts['ratio'] = np.r_['0,2',totDucts['ratio'],tempRatio]
+            data[i]['ratio'] = np.r_['0,2',data[i]['ratio'],tempRatio]
 
     # Update total arrays in totDucts dictionary
     for grade in grades:
@@ -109,25 +110,61 @@ for key in totDucts:
 
 # %% Separate density by healthy vs cancer (and no 3+3)
 # Totals
-totDucts['density0Bool'] = np.zeros(totDucts['density'].shape[0]).astype('bool')
-totDucts['density33Bool'] = np.zeros(totDucts['density'].shape[0]).astype('bool')
+totDucts['ratio0Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
+totDucts['ratio33Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
+totDucts['ratio34Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
+totDucts['ratio43Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
+totDucts['ratio44Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
 
-for i in range(totDucts['density'].shape[0]):
-    if totDucts['density'][i,1] == 0:
-        totDucts['density0Bool'][i] = True
-    if totDucts['density'][i,1] == 33:
-        totDucts['density33Bool'][i] = True
+
+for i in range(totDucts['ratio'].shape[0]):
+    if totDucts['ratio'][i,1] == 0:
+        totDucts['ratio0Bool'][i] = True
+    elif totDucts['ratio'][i,1] == 33:
+        totDucts['ratio33Bool'][i] = True
+    elif totDucts['ratio'][i,1] == 34:
+        totDucts['ratio34Bool'][i] = True
+    elif totDucts['ratio'][i,1] == 43:
+        totDucts['ratio43Bool'][i] = True
+    elif totDucts['ratio'][i,1] == 44:
+        totDucts['ratio44Bool'][i] = True
 
 # Do the same for each patient
 for pt in data:
-    data[pt]['density0Bool'] = np.zeros(data[pt]['density'].shape[0]).astype('bool')
-    data[pt]['density33Bool'] = np.zeros(data[pt]['density'].shape[0]).astype('bool')
+    data[pt]['ratio0Bool'] = np.zeros(data[pt]['ratio'].shape[0]).astype('bool')
+    data[pt]['ratio33Bool'] = np.zeros(data[pt]['ratio'].shape[0]).astype('bool')
+    data[pt]['ratio34Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
+    data[pt]['ratio43Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
+    data[pt]['ratio44Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
+    
+    for i in range(data[pt]['ratio'].shape[0]):
+        if data[pt]['ratio'][i,1] == 0:
+            data[pt]['ratio0Bool'][i] = True
+        elif data[pt]['ratio'][i,1] == 33:
+            data[pt]['ratio33Bool'][i] = True
+        elif data[pt]['ratio'][i,1] == 34:
+            data[pt]['ratio34Bool'][i] = True
+        elif data[pt]['ratio'][i,1] == 43:
+            data[pt]['ratio43Bool'][i] = True
+        elif data[pt]['ratio'][i,1] == 44:
+            data[pt]['ratio44Bool'][i] = True
 
-    for i in range(data[pt]['density'].shape[0]):
-        if data[pt]['density'][i,1] == 0:
-            data[pt]['density0Bool'][i] = True
-        if data[pt]['density'][i,1] == 33:
-            data[pt]['density33Bool'][i] = True
+# %% Box & Whisker + Mean & StD: Ductal Ratio
+i = 0
+x = [totDucts['ratio'][totDucts['ratio0Bool'],i],totDucts['ratio'][~totDucts['ratio0Bool'],i],totDucts['ratio'][~totDucts['ratio0Bool']+~totDucts['ratio33Bool'],i]]
+labels = ['Healthy','Cancer (w/ 3+3)','Cancer (No 3+3)']
+
+plt.boxplot(x,labels=labels)
+plt.title('Ductal Ratio (Median and IQR)')
+plt.ylabel('Ductal Ratio')
+plt.show()
+
+x = [totDucts['ratio'][totDucts['ratio0Bool'],i],totDucts['ratio'][totDucts['ratio33Bool'],i],totDucts['ratio'][totDucts['ratio34Bool'],i],totDucts['ratio'][totDucts['ratio43Bool'],i],totDucts['ratio'][totDucts['ratio44Bool'],i]]
+labels = ['Healthy','3+3','3+4','4+3','4+4']
+plt.boxplot(x,labels=labels)
+plt.title('Ductal Ratio (Median and IQR)')
+plt.ylabel('Ductal Ratio')
+plt.show()
 
 # %% Mean/StD values for each measurement
 avg = np.zeros((2,3))
