@@ -19,137 +19,88 @@ for i in range(tracker.shape[0]):
 temp = tracker.loc[logical,'ID'].values
 for i in range(len(temp)):
     data[i] = {}
-    data[i]['id'] = (str(temp[i]).zfill(3))
-    data[i]['dataPath'] = ('{}\\data\\data_{}.xlsx'.format(pathDir,data[i]['id']))
-
-# %% Obtain paths to statistics
-pathDir = r'C:\Users\griff\Box\CASIT\Files for Derrick\duct-analysis'
-trackerDir = pathDir + '\Tracker.xlsx'
-
-# Find completed cases using Tracker spreadsheet
-tracker = pd.read_excel(trackerDir,sheet_name=0)
-print(tracker.head())
-logical = np.zeros(tracker.shape[0]).astype('bool')
-for i in range(tracker.shape[0]):
-    if tracker.iloc[i,2] == 1:
-        logical[i] = 1
-cases = pd.DataFrame(tracker.loc[logical,'ID'])
-cases = cases.reset_index(drop=True)
-print(cases.ID)
-
-# Create path to each case's statistics
-cases['statPath'] = pd.Series(dtype='string')
-cases['dataPath'] = pd.Series(dtype='string')
-for i in range(cases.shape[0]):
-    cases.iloc[i,0] = str(cases.iloc[i,0])
-    cases.iloc[i,0] = cases.iloc[i,0].zfill(3)
-    
-    cases.iloc[i,1] = ('{}\\{}\\results_{}\\data_{}.xlsx'.format(pathDir,cases.iloc[i,0],cases.iloc[i,0],cases.iloc[i,0]))
-    cases.iloc[i,2] = ('{}\\data\\data_{}.xlsx'.format(pathDir,cases.iloc[i,0]))
-
-print(cases.head())
+    data[i]['id'] = str(temp[i]).zfill(3)
+    data[i]['dataPath'] = '{}\\data\\data_{}.xlsx'.format(pathDir,data[i]['id'])
 
 # %% Import data using np.r_
-healthy = np.zeros((1,5))
-g33 = np.zeros((1,5))
-g34 = np.zeros((1,5))
-g43 = np.zeros((1,5))
-g44 = np.zeros((1,5))
-g45 = np.zeros((1,5))
-g54 = np.zeros((1,5))
-g55 = np.zeros((1,5))
-totCancer = np.zeros((1,5))
-density = np.zeros((1,2))
+grades = [0,33,34,43,44,45,54,55]
+totDucts = {}
 
-max = np.zeros((cases.shape[0],3)) # Area, Equivalent Diamater, Major Axis Length
+# Arrays to store total ducts for each grade
+for grade in grades:
+    totDucts[grade] = np.zeros((1,5)) # Update size depending on spreadsheet
 
-for i in range(cases.shape[0]):
-    temp = pd.read_excel(cases.loc[i,'dataPath'],usecols='A:E').values
-    max[i,0] = np.max(temp[:,0])
-    max[i,1] = np.max(temp[:,1])
-    max[i,2] = np.max(temp[:,2])
+totDucts['cancerNo33'] = np.zeros((1,5))
+totDucts['cancer33'] = np.zeros((1,5))
+totDucts['density'] = np.zeros((1,2))
 
-    print(temp.shape)
+maxVal = np.zeros((len(data),3)) # Area, Equivalent Diamater, Major Axis Length
+
+for i in range(len(data)):
+    data[i]['rawData'] = pd.read_excel(data[i]['dataPath'],usecols='A:E').values
+    data[i]['density'] = np.zeros((1,2))
+    
+    # Record max values in case they're needed later
+    maxVal[i,0] = np.max(data[i]['rawData'][:,0])
+    maxVal[i,1] = np.max(data[i]['rawData'][:,1])
+    maxVal[i,2] = np.max(data[i]['rawData'][:,2])
+
+    # Temporary arrays to store patient specific data
+    for grade in grades:
+        data[i][grade] = np.zeros((1,5))
+
+    print('{}: {}'.format(data[i]['id'],data[i]['rawData'].shape))
+
     # Assign values
-    for ii in range(temp.shape[0]):
+    for ii in range(data[i]['rawData'].shape[0]):
 
-        # Duct sizes
-        if temp[ii,4] == 0:
-            healthy = np.r_['0,2',healthy,temp[ii,:]]
-        elif temp[ii,4] == 33:
-            g33 = np.r_['0,2',g33,temp[ii,:]]
-            totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,4] == 34:
-            g34 = np.r_['0,2',g34,temp[ii,:]]
-            totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,4] == 43:
-            g43 = np.r_['0,2',g43,temp[ii,:]]
-            totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,4] == 44:
-            g44 = np.r_['0,2',g44,temp[ii,:]]
-            totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,4] == 45:
-            g45 = np.r_['0,2',g45,temp[ii,:]]
-            totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,4] == 54:
-            g54 = np.r_['0,2',g54,temp[ii,:]]
-            totCancer = np.r_['0,2',totCancer,temp[ii,:]]
-        elif temp[ii,4] == 55:
-            g55 = np.r_['0,2',g55,temp[ii,:]]
-            totCancer = np.r_['0,2',totCancer,temp[ii,:]]
+        # Patient specific duct sizes (Need to update if column headers change)
+        if data[i]['rawData'][ii,4] == 0:
+            data[i][0] = np.r_['0,2',data[i][0],data[i]['rawData'][ii,:]]
+        elif data[i]['rawData'][ii,4] == 33:
+            data[i][33] = np.r_['0,2',data[i][33],data[i]['rawData'][ii,:]]
+        elif data[i]['rawData'][ii,4] == 34:
+            data[i][34] = np.r_['0,2',data[i][34],data[i]['rawData'][ii,:]]
+        elif data[i]['rawData'][ii,4] == 43:
+            data[i][43] = np.r_['0,2',data[i][43],data[i]['rawData'][ii,:]]
+        elif data[i]['rawData'][ii,4] == 44:
+            data[i][44] = np.r_['0,2',data[i][44],data[i]['rawData'][ii,:]]
+        elif data[i]['rawData'][ii,4] == 45:
+            data[i][45] = np.r_['0,2',t45,data[i]['rawData'][ii,:]]
+        elif data[i]['rawData'][ii,4] == 54:
+            data[i][54] = np.r_['0,2',data[i][54],data[i]['rawData'][ii,:]]
+        elif data[i]['rawData'][ii,4] == 55:
+            data[i][55] = np.r_['0,2',data[i][55],data[i]['rawData'][ii,:]]
 
-        # Density
+        # Density (Need to update if column headers change)
         if ii == 0:
-            tempDensity = temp[ii,3:5]
-            density = np.r_['0,2',density,tempDensity]
-        elif tempDensity[0] != temp[ii,3]:
-            tempDensity = temp[ii,3:5]
-            density = np.r_['0,2',density,tempDensity]
+            tempDensity = data[i]['rawData'][ii,3:5]
+            totDucts['density'] = np.r_['0,2',totDucts['density'],tempDensity]
+            data[i]['density'] = np.r_['0,2',data[i]['density'],tempDensity]
+        elif tempDensity[0] != data[i]['rawData'][ii,3]:
+            tempDensity = data[i]['rawData'][ii,3:5]
+            totDucts['density'] = np.r_['0,2',totDucts['density'],tempDensity]
+            data[i]['density'] = np.r_['0,2',data[i]['density'],tempDensity]
 
-# %% Test dataframes for each patient
-cases['data'] = pd.Series(dtype='object')
+    # Update total arrays in totDucts dictionary
+    for grade in grades:
+        # Remove first row that is all zeros
+        data[i][grade] = data[i][grade][1:data[i][grade].shape[0],:]
 
-healthy = np.zeros((1,5))
+        # Add to appropriate totDucts array
+        totDucts[grade] = np.append(totDucts[grade],data[i][grade],axis=0)
 
-max = np.zeros((cases.shape[0],3)) # Area, Equivalent Diamater, Major Axis Length
-
-for i in range(1):
-    temp = pd.read_excel(cases.loc[i,'dataPath'],usecols='A:E').values
-    cases.loc[i,'data'] = temp
-    max[i,0] = np.max(temp[:,0])
-    max[i,1] = np.max(temp[:,1])
-    max[i,2] = np.max(temp[:,2])
-
-    print(temp.shape)
-    # Assign values
-    for ii in range(temp.shape[0]):
-
-        # Duct sizes
-        if temp[ii,4] == 0:
-            healthy = np.r_['0,2',healthy,temp[ii,:]]
+        if grade != 0 and grade != 33:
+            totDucts['cancerNo33'] = np.append(totDucts['cancerNo33'],data[i][grade],axis=0)
         
-# %% Remove first row
-healthy = healthy[1:healthy.shape[0],:]
-g33 = g33[1:g33.shape[0],:]
-g34 = g34[1:g34.shape[0],:]
-g43 = g43[1:g43.shape[0],:]
-g44 = g44[1:g44.shape[0],:]
-g45 = g45[1:g45.shape[0],:]
-g54 = g54[1:g54.shape[0],:]
-g55 = g55[1:g55.shape[0],:]
-totCancer = totCancer[1:totCancer.shape[0],:]
-density = density[1:totCancer.shape[0],:]
+        if grade != 0:
+            totDucts['cancer33'] = np.append(totDucts['cancer33'],data[i][grade],axis=0)
 
-# %% Check arrays
-print(healthy.shape)
-print(g33.shape)
-print(g34.shape)
-print(g43.shape)
-print(g44.shape)
-print(g45.shape)
-print(g54.shape)
-print(g55.shape)
-print(density.shape)
+print('\nNumber of elements in')
+# Remove first row that is all zeros
+for key in totDucts:
+    totDucts[key] = totDucts[key][1:totDucts[key].shape[0],:]
+    print('{}: {}'.format(key,totDucts[key].shape))
 
 # %% Density Healthy Logical
 logical = np.zeros(density.shape[0]).astype('bool')
