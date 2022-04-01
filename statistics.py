@@ -38,7 +38,6 @@ maxVal = np.zeros((len(data),3)) # Area, Equivalent Diamater, Major Axis Length
 
 for i in range(len(data)):
     data[i]['rawData'] = pd.read_excel(data[i]['dataPath'],usecols='A:E').values
-    data[i]['density'] = np.zeros((1,2))
     
     # Record max values in case they're needed later
     maxVal[i,0] = np.max(data[i]['rawData'][:,0])
@@ -48,6 +47,10 @@ for i in range(len(data)):
     # Temporary arrays to store patient specific data
     for grade in grades:
         data[i][grade] = np.zeros((1,5))
+
+    data[i]['cancerNo33'] = np.zeros((1,5))
+    data[i]['cancer33'] = np.zeros((1,5))
+    data[i]['density'] = np.zeros((1,2))
 
     print('{}: {}'.format(data[i]['id'],data[i]['rawData'].shape))
 
@@ -92,11 +95,13 @@ for i in range(len(data)):
 
         if grade != 0 and grade != 33:
             totDucts['cancerNo33'] = np.append(totDucts['cancerNo33'],data[i][grade],axis=0)
-        
+            data[i]['cancerNo33'] = np.append(data[i]['cancerNo33'],data[i][grade],axis=0)
+
         if grade != 0:
             totDucts['cancer33'] = np.append(totDucts['cancer33'],data[i][grade],axis=0)
+            data[i]['cancer33'] = np.append(data[i]['cancer33'],data[i][grade],axis=0)
 
-print('\nNumber of elements in')
+print('\nSize of array')
 # Remove first row that is all zeros
 for key in totDucts:
     totDucts[key] = totDucts[key][1:totDucts[key].shape[0],:]
