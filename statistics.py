@@ -39,6 +39,7 @@ maxVal = np.zeros((len(data),3)) # Area, Equivalent Diamater, Major Axis Length
 
 for i in range(len(data)):
     data[i]['rawData'] = pd.read_excel(data[i]['dataPath'],usecols='A:E').values
+    data[i]['rawData'][:,0:3] = data[i]['rawData'][:,0:3]*1000
     
     # Record max values in case they're needed later
     maxVal[i,0] = np.max(data[i]['rawData'][:,0])
@@ -144,15 +145,18 @@ for pt in data:
         elif data[pt]['ratio'][i,1] == 44:
             data[pt]['ratio44Bool'][i] = True
 
-# %% Box & Whisker + Mean & StD: Ductal Ratio
+# %% Total Box & Whisker + Mean & StD: Ductal Ratio
 # Boxplots
 x = [totDucts['ratio'][totDucts['ratio0Bool'],0],
-    totDucts['ratio'][~totDucts['ratio0Bool'],0],
+    totDucts['ratio'][totDucts['ratio33Bool'],0],
     totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool']),0]]
-labels = ['Healthy','Cancer (w/ 3+3)','Cancer (No 3+3)']
+labels = ['Healthy (N={})'.format(totDucts['ratio'][totDucts['ratio0Bool']].shape[0]),
+    'Insignificant Cancer (N={})'.format(totDucts['ratio'][totDucts['ratio33Bool']].shape[0]),
+    'Significant Cancer (N={})'.format(totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool'])].shape[0])]
 
 plt.boxplot(x,labels=labels)
-plt.title('Ductal Ratio (Median and IQR)')
+plt.xticks(rotation=-20)
+plt.title('Total Ductal Ratio (Median and IQR)')
 plt.ylabel('Ductal Ratio')
 plt.show()
 
@@ -163,7 +167,7 @@ x = [totDucts['ratio'][totDucts['ratio0Bool'],0],
     totDucts['ratio'][totDucts['ratio44Bool'],0]]
 labels = ['Healthy','3+3','3+4','4+3','4+4']
 plt.boxplot(x,labels=labels)
-plt.title('Ductal Ratio (Median and IQR)')
+plt.title('Total Ductal Ratio (Median and IQR)')
 plt.ylabel('Ductal Ratio')
 plt.show()
 
@@ -183,11 +187,84 @@ ratioMeanStD[1,5] = np.std(totDucts['ratio'][~totDucts['ratio0Bool'],0])
 ratioMeanStD[0,6] = np.mean(totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool']),0])
 ratioMeanStD[1,6] = np.std(totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool']),0])
 
-plt.errorbar(xAxis,ratioMeanStD[0,:],yerr=ratioMeanStD[1,:])
+plt.scatter(xAxis,ratioMeanStD[0,:])
+plt.errorbar(xAxis,ratioMeanStD[0,:],yerr=ratioMeanStD[1,:],fmt='o')
 plt.title('Ductal Ratio (Mean and StD)')
 plt.ylabel('Ductal Ratio')
 plt.xlabel('Healthy, 3+3, 3+4, 4+3, 4+4, Cancer (w/ 3+3), Cancer (No 3+3)')
 plt.show()
+
+# %% Patient Specific Box & Whisker + Mean & StD: Ductal Ratio
+xAxis = np.arange(0,7,1)
+
+for pt in data:
+    fig,ax = plt.subplots(2,2)
+    plt.subplots_adjust(hspace = 0.3,wspace = 0.3)
+    
+    fig.suptitle('Patient {}: Ductal Ratio Boxplot, Mean & StD'.format(data[pt]['id']))
+    fig.supylabel('Ductal Ratio')
+
+    # Boxplots
+    x0 = [data[pt]['ratio'][data[pt]['ratio0Bool'],0],
+        data[pt]['ratio'][~data[pt]['ratio0Bool'],0],
+        data[pt]['ratio'][~(data[pt]['ratio0Bool']+data[pt]['ratio33Bool']),0]]
+    labels0 = ['H','C (w/ 33)','C (No 33)']
+
+    ax[0,0].boxplot(x0,labels=labels0)
+    ax[0,0].set_title('Median and IQR')
+
+    x1 = [data[pt]['ratio'][data[pt]['ratio0Bool'],0],
+        data[pt]['ratio'][data[pt]['ratio33Bool'],0],
+        data[pt]['ratio'][data[pt]['ratio34Bool'],0],
+        data[pt]['ratio'][data[pt]['ratio43Bool'],0],
+        data[pt]['ratio'][data[pt]['ratio44Bool'],0]]
+    labels1 = ['H','33','34','43','44']
+    ax[1,0].boxplot(x1,labels=labels1)
+
+    # Calculate Mean & StD
+    data[pt]['ratioMeanStD'] = np.zeros((2,7))
+
+    for i in range(len(ratioBools)):
+        data[pt]['ratioMeanStD'][0,i] = np.mean(data[pt]['ratio'][data[pt][ratioBools[i]],0])
+        data[pt]['ratioMeanStD'][1,i] = np.std(data[pt]['ratio'][data[pt][ratioBools[i]],0])
+
+    # Cancer (w/ 3+3)
+    data[pt]['ratioMeanStD'][0,5] = np.mean(data[pt]['ratio'][~data[pt]['ratio0Bool'],0])
+    data[pt]['ratioMeanStD'][1,5] = np.std(data[pt]['ratio'][~data[pt]['ratio0Bool'],0])
+
+    # Cancer (No 3+3)
+    data[pt]['ratioMeanStD'][0,6] = np.mean(data[pt]['ratio'][~(data[pt]['ratio0Bool']+data[pt]['ratio33Bool']),0])
+    data[pt]['ratioMeanStD'][1,6] = np.std(data[pt]['ratio'][~(data[pt]['ratio0Bool']+data[pt]['ratio33Bool']),0])
+
+    ax[0,1].scatter(xAxis,data[pt]['ratioMeanStD'][0,:])
+    ax[0,1].errorbar(xAxis,data[pt]['ratioMeanStD'][0,:],yerr=data[pt]['ratioMeanStD'][1,:],fmt='o')
+    ax[0,1].set_title('Mean & StD')
+    ax[0,1].set_xlabel('H, 33, 34, 43, 44, C (w/ 33), C (No 33)')
+
+    fig.delaxes(ax[1,1])
+
+    data[pt]['ratioFig'] = fig
+    plt.savefig('ratioFig{}.png'.format(data[pt]['id']),dpi=1000)
+
+# %% Equivalent Diameter Histograms
+i = 1
+
+# Create bins for data
+n = 10 # bin size
+bins = np.arange(70,500+n,n)
+# bins = np.insert(bins,0,0)
+# bins = np.insert(bins,n+1,np.max(maxVal[:,i]))
+
+# Histograms
+fig,ax = plt.subplots(figsize=(9,5))
+
+ax[0].hist(np.clip(totDucts[0][:,i],bins[0],bins[-1]),bins=bins)
+xlabels = bins[1:].astype(str)
+xlabels[-1] += '+'
+ax[0].set_xticklabels(xlabels)
+
+fig.show()
+    
 
 # %% Mean/StD values for each measurement
 avg = np.zeros((2,3))
