@@ -146,7 +146,9 @@ for pt in data:
 
 # %% Box & Whisker + Mean & StD: Ductal Ratio
 # Boxplots
-x = [totDucts['ratio'][totDucts['ratio0Bool'],0],totDucts['ratio'][~totDucts['ratio0Bool'],0],totDucts['ratio'][~totDucts['ratio0Bool']+~totDucts['ratio33Bool'],0]]
+x = [totDucts['ratio'][totDucts['ratio0Bool'],0],
+    totDucts['ratio'][~totDucts['ratio0Bool'],0],
+    totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool']),0]]
 labels = ['Healthy','Cancer (w/ 3+3)','Cancer (No 3+3)']
 
 plt.boxplot(x,labels=labels)
@@ -154,7 +156,11 @@ plt.title('Ductal Ratio (Median and IQR)')
 plt.ylabel('Ductal Ratio')
 plt.show()
 
-x = [totDucts['ratio'][totDucts['ratio0Bool'],0],totDucts['ratio'][totDucts['ratio33Bool'],0],totDucts['ratio'][totDucts['ratio34Bool'],0],totDucts['ratio'][totDucts['ratio43Bool'],0],totDucts['ratio'][totDucts['ratio44Bool'],0]]
+x = [totDucts['ratio'][totDucts['ratio0Bool'],0],
+    totDucts['ratio'][totDucts['ratio33Bool'],0],
+    totDucts['ratio'][totDucts['ratio34Bool'],0],
+    totDucts['ratio'][totDucts['ratio43Bool'],0],
+    totDucts['ratio'][totDucts['ratio44Bool'],0]]
 labels = ['Healthy','3+3','3+4','4+3','4+4']
 plt.boxplot(x,labels=labels)
 plt.title('Ductal Ratio (Median and IQR)')
@@ -174,8 +180,8 @@ ratioMeanStD[0,5] = np.mean(totDucts['ratio'][~totDucts['ratio0Bool'],0])
 ratioMeanStD[1,5] = np.std(totDucts['ratio'][~totDucts['ratio0Bool'],0])
 
 # Cancer (No 3+3)
-ratioMeanStD[0,6] = np.mean(totDucts['ratio'][~totDucts['ratio0Bool']+~totDucts['ratio33Bool'],0])
-ratioMeanStD[1,6] = np.std(totDucts['ratio'][~totDucts['ratio0Bool']+~totDucts['ratio33Bool'],0])
+ratioMeanStD[0,6] = np.mean(totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool']),0])
+ratioMeanStD[1,6] = np.std(totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool']),0])
 
 plt.errorbar(xAxis,ratioMeanStD[0,:],yerr=ratioMeanStD[1,:])
 plt.title('Ductal Ratio (Mean and StD)')
