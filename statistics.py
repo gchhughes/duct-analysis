@@ -109,13 +109,11 @@ for key in totDucts:
     print('{}: {}'.format(key,totDucts[key].shape))
 
 # %% Separate density by healthy vs cancer (and no 3+3)
-# Totals
-totDucts['ratio0Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
-totDucts['ratio33Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
-totDucts['ratio34Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
-totDucts['ratio43Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
-totDucts['ratio44Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
+ratioBools = ['ratio0Bool','ratio33Bool','ratio34Bool','ratio43Bool','ratio44Bool']
 
+# Totals
+for ratioBool in ratioBools:
+    totDucts[ratioBool] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
 
 for i in range(totDucts['ratio'].shape[0]):
     if totDucts['ratio'][i,1] == 0:
@@ -131,11 +129,8 @@ for i in range(totDucts['ratio'].shape[0]):
 
 # Do the same for each patient
 for pt in data:
-    data[pt]['ratio0Bool'] = np.zeros(data[pt]['ratio'].shape[0]).astype('bool')
-    data[pt]['ratio33Bool'] = np.zeros(data[pt]['ratio'].shape[0]).astype('bool')
-    data[pt]['ratio34Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
-    data[pt]['ratio43Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
-    data[pt]['ratio44Bool'] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
+    for ratioBool in ratioBools:
+        data[pt][ratioBool] = np.zeros(data[pt]['ratio'].shape[0]).astype('bool')
     
     for i in range(data[pt]['ratio'].shape[0]):
         if data[pt]['ratio'][i,1] == 0:
@@ -150,8 +145,8 @@ for pt in data:
             data[pt]['ratio44Bool'][i] = True
 
 # %% Box & Whisker + Mean & StD: Ductal Ratio
-i = 0
-x = [totDucts['ratio'][totDucts['ratio0Bool'],i],totDucts['ratio'][~totDucts['ratio0Bool'],i],totDucts['ratio'][~totDucts['ratio0Bool']+~totDucts['ratio33Bool'],i]]
+# Boxplots
+x = [totDucts['ratio'][totDucts['ratio0Bool'],0],totDucts['ratio'][~totDucts['ratio0Bool'],0],totDucts['ratio'][~totDucts['ratio0Bool']+~totDucts['ratio33Bool'],0]]
 labels = ['Healthy','Cancer (w/ 3+3)','Cancer (No 3+3)']
 
 plt.boxplot(x,labels=labels)
@@ -159,11 +154,33 @@ plt.title('Ductal Ratio (Median and IQR)')
 plt.ylabel('Ductal Ratio')
 plt.show()
 
-x = [totDucts['ratio'][totDucts['ratio0Bool'],i],totDucts['ratio'][totDucts['ratio33Bool'],i],totDucts['ratio'][totDucts['ratio34Bool'],i],totDucts['ratio'][totDucts['ratio43Bool'],i],totDucts['ratio'][totDucts['ratio44Bool'],i]]
+x = [totDucts['ratio'][totDucts['ratio0Bool'],0],totDucts['ratio'][totDucts['ratio33Bool'],0],totDucts['ratio'][totDucts['ratio34Bool'],0],totDucts['ratio'][totDucts['ratio43Bool'],0],totDucts['ratio'][totDucts['ratio44Bool'],0]]
 labels = ['Healthy','3+3','3+4','4+3','4+4']
 plt.boxplot(x,labels=labels)
 plt.title('Ductal Ratio (Median and IQR)')
 plt.ylabel('Ductal Ratio')
+plt.show()
+
+# Calculate Mean & StD
+ratioMeanStD = np.zeros((2,7))
+xAxis = np.arange(0,7,1)
+
+for i in range(len(ratioBools)):
+    ratioMeanStD[0,i] = np.mean(totDucts['ratio'][totDucts[ratioBools[i]],0])
+    ratioMeanStD[1,i] = np.std(totDucts['ratio'][totDucts[ratioBools[i]],0])
+
+# Cancer (w/ 3+3)
+ratioMeanStD[0,5] = np.mean(totDucts['ratio'][~totDucts['ratio0Bool'],0])
+ratioMeanStD[1,5] = np.std(totDucts['ratio'][~totDucts['ratio0Bool'],0])
+
+# Cancer (No 3+3)
+ratioMeanStD[0,6] = np.mean(totDucts['ratio'][~totDucts['ratio0Bool']+~totDucts['ratio33Bool'],0])
+ratioMeanStD[1,6] = np.std(totDucts['ratio'][~totDucts['ratio0Bool']+~totDucts['ratio33Bool'],0])
+
+plt.errorbar(xAxis,ratioMeanStD[0,:],yerr=ratioMeanStD[1,:])
+plt.title('Ductal Ratio (Mean and StD)')
+plt.ylabel('Ductal Ratio')
+plt.xlabel('Healthy, 3+3, 3+4, 4+3, 4+4, Cancer (w/ 3+3), Cancer (No 3+3)')
 plt.show()
 
 # %% Mean/StD values for each measurement
