@@ -145,7 +145,7 @@ for pt in data:
         elif data[pt]['ratio'][i,1] == 44:
             data[pt]['ratio44Bool'][i] = True
 
-# %% Total Box & Whisker + Mean & StD: Ductal Ratio
+# %% Total Ductal Ratio Box & Whisker + Mean & StD
 # Boxplots
 x = [totDucts['ratio'][totDucts['ratio0Bool'],0],
     totDucts['ratio'][totDucts['ratio33Bool'],0],
@@ -191,7 +191,7 @@ plt.scatter(xAxis,ratioMeanStD[0,:])
 plt.errorbar(xAxis,ratioMeanStD[0,:],yerr=ratioMeanStD[1,:],fmt='o')
 plt.title('Ductal Ratio (Mean and StD)')
 plt.ylabel('Ductal Ratio')
-plt.xlabel('Healthy, 3+3, 3+4, 4+3, 4+4, Cancer (w/ 3+3), Cancer (No 3+3)')
+plt.xlabel('Healthy, 33, 34, 43, 44, Cancer (w/ 33), Cancer (No 33)')
 plt.show()
 
 # %% Patient Specific Box & Whisker + Mean & StD: Ductal Ratio
@@ -264,7 +264,57 @@ xlabels[-1] += '+'
 ax[0].set_xticklabels(xlabels)
 
 fig.show()
+
+# %% Measurements Box & Whisker + Mean & StD
+xAxis = np.arange(0,6,1)
+i = 1 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
+
+for pt in data:
+    fig,ax = plt.subplots(2,2)
+    plt.subplots_adjust(hspace = 0.7,wspace = 0.3)
     
+    fig.suptitle('Patient {}: Equivalent Diameter Boxplot, Mean & StD'.format(data[pt]['id']))
+    fig.supylabel('Equivalent Diameter (µm)')
+
+    sigCancer = np.concatenate((data[0][34][:,i],data[0][43][:,i],data[0][44][:,i],data[0][45][:,i],data[0][54][:,i],data[0][55][:,i]),axis=0)
+
+    # Boxplots
+    x0 = [data[pt][0][:,i],data[pt][33][:,i],sigCancer]
+    labels0 = ['H (N={})'.format(data[pt][0].shape[0]),'IC (N={})'.format(data[pt][33].shape[0]),'SC (N={})'.format(sigCancer.shape[0])]
+
+    ax[0,0].boxplot(x0,labels=labels0)
+    ax[0,0].tick_params(axis='x', rotation=-20)
+    ax[0,0].axhline(y=135, color='r', linestyle='-')
+    ax[0,0].set_title('Median and IQR')
+
+    # Update if cases have 4+5, 5+4, and 5+5
+    x1 = [data[pt][0][:,i],data[pt][33][:,i],data[pt][34][:,i],
+        data[pt][43][:,i],data[pt][44][:,i]]
+    labels1 = ['H','33','34','43','44']
+    ax[1,0].boxplot(x1,labels=labels1)
+    ax[1,0].axhline(y=135, color='r', linestyle='-')
+
+    # Calculate Mean & StD
+    data[pt]['measurementsMeanStD'] = np.zeros((2,6)) # Change length if all GGs are present
+
+    for iii in range(len(grades[0:5])): # Change length if all GGs are present
+        data[pt]['measurementsMeanStD'][0,iii] = np.mean(data[pt][grades[iii]][:,i])
+        data[pt]['measurementsMeanStD'][1,iii] = np.std(data[pt][grades[iii]][:,i])
+
+    # Significant cancer
+    data[pt]['measurementsMeanStD'][0,5] = np.mean(sigCancer)
+    data[pt]['measurementsMeanStD'][1,5] = np.std(sigCancer)
+
+    ax[0,1].scatter(xAxis,data[pt]['measurementsMeanStD'][0,:])
+    ax[0,1].errorbar(xAxis,data[pt]['measurementsMeanStD'][0,:],yerr=data[pt]['measurementsMeanStD'][1,:],fmt='o')
+    ax[0,1].set_title('Mean & StD')
+    ax[0,1].axhline(y=135, color='r', linestyle='-')
+    ax[0,1].set_xticks(range(6),labels=['H','33','34','43','44','SC'])
+
+    fig.delaxes(ax[1,1])
+
+    data[pt]['measurement{}Fig'.format(i)] = fig
+    plt.savefig('measurement{}Fig{}.png'.format(i,data[pt]['id']),dpi=1000)
 
 # %% Mean/StD values for each measurement
 avg = np.zeros((2,3))
