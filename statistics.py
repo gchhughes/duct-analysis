@@ -194,7 +194,7 @@ plt.ylabel('Ductal Ratio')
 plt.xlabel('Healthy, 33, 34, 43, 44, Cancer (w/ 33), Cancer (No 33)')
 plt.show()
 
-# %% Patient Specific Box & Whisker + Mean & StD: Ductal Ratio
+# %% Patient Specific Ductal Ratio Box & Whisker + Mean & StD
 xAxis = np.arange(0,7,1)
 
 for pt in data:
@@ -265,7 +265,70 @@ ax[0].set_xticklabels(xlabels)
 
 fig.show()
 
-# %% Measurements Box & Whisker + Mean & StD
+# %% Equivalent Diameter Percentage
+i = 1
+j = 200 # ED we're screening for
+
+totDucts['percent'] = np.zeros(6) # Update if 45,54,55 are included
+sigCancer = np.concatenate((totDucts[34][:,i],totDucts[43][:,i],totDucts[44][:,i],totDucts[45][:,i],totDucts[54][:,i],totDucts[55][:,i]),axis=0)
+
+
+for ii in range(5): # Update if 45,54,55 are included
+    totDucts['percent'][ii] = sum(val > j for val in totDucts[grades[ii]][:,i])/(totDucts[grades[ii]].shape[0])
+
+totDucts['percent'][5] = sum(val > j for val in sigCancer)/(sigCancer.shape[0])
+
+# %% Total Measurements Box & Whisker + Mean & StD
+xAxis = np.arange(0,6,1)
+i = 0 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
+
+fig,ax = plt.subplots(2,2)
+plt.subplots_adjust(hspace = 0.7,wspace = 0.3)
+    
+fig.suptitle('Total Area Boxplot, Mean & StD')
+fig.supylabel('Area (µm^2)')
+
+sigCancer = np.concatenate((totDucts[34][:,i],totDucts[43][:,i],totDucts[44][:,i],totDucts[45][:,i],totDucts[54][:,i],totDucts[55][:,i]),axis=0)
+
+# Boxplots
+x0 = [totDucts[0][:,i],totDucts[33][:,i],sigCancer]
+labels0 = ['H (N={})'.format(totDucts[0].shape[0]),'IC (N={})'.format(totDucts[33].shape[0]),'SC (N={})'.format(sigCancer.shape[0])]
+
+ax[0,0].boxplot(x0,labels=labels0)
+ax[0,0].tick_params(axis='x', rotation=-20)
+# ax[0,0].axhline(y=135, color='r', linestyle='-')
+ax[0,0].set_title('Median and IQR')
+
+# Update if cases have 4+5, 5+4, and 5+5
+x1 = [totDucts[0][:,i],totDucts[33][:,i],totDucts[34][:,i],
+    totDucts[43][:,i],totDucts[44][:,i]]
+labels1 = ['H','33','34','43','44']
+ax[1,0].boxplot(x1,labels=labels1)
+# ax[1,0].axhline(y=135, color='r', linestyle='-')
+
+# Calculate Mean & StD
+totDucts['measurementsMeanStD'] = np.zeros((2,6)) # Change length if all GGs are present
+
+for iii in range(len(grades[0:5])): # Change length if all GGs are present
+    totDucts['measurementsMeanStD'][0,iii] = np.mean(totDucts[grades[iii]][:,i])
+    totDucts['measurementsMeanStD'][1,iii] = np.std(totDucts[grades[iii]][:,i])
+
+# Significant cancer
+totDucts['measurementsMeanStD'][0,5] = np.mean(sigCancer)
+totDucts['measurementsMeanStD'][1,5] = np.std(sigCancer)
+
+ax[0,1].scatter(xAxis,totDucts['measurementsMeanStD'][0,:])
+ax[0,1].errorbar(xAxis,totDucts['measurementsMeanStD'][0,:],yerr=totDucts['measurementsMeanStD'][1,:],fmt='o')
+ax[0,1].set_title('Mean & StD')
+# ax[0,1].axhline(y=135, color='r', linestyle='-')
+ax[0,1].set_xticks(range(6),labels=['H','33','34','43','44','SC'])
+
+fig.delaxes(ax[1,1])
+
+totDucts['totalMeasurement{}'.format(i)] = fig
+plt.savefig('totalMeasurement{}.png'.format(i),dpi=1000)
+
+# %% Patient Specific Measurements Box & Whisker + Mean & StD
 xAxis = np.arange(0,6,1)
 i = 1 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
 
