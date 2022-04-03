@@ -274,9 +274,9 @@ for pt in data:
     plt.subplots_adjust(hspace = 0.7,wspace = 0.3)
     
     fig.suptitle('Patient {}: Equivalent Diameter Boxplot, Mean & StD'.format(data[pt]['id']))
-    fig.supylabel('Equivalent Diameter (µm)')
+    fig.supylabel('Equivalent Diameter (µm^2)')
 
-    sigCancer = np.concatenate((data[0][34][:,i],data[0][43][:,i],data[0][44][:,i],data[0][45][:,i],data[0][54][:,i],data[0][55][:,i]),axis=0)
+    sigCancer = np.concatenate((data[pt][34][:,i],data[pt][43][:,i],data[pt][44][:,i],data[pt][45][:,i],data[pt][54][:,i],data[pt][55][:,i]),axis=0)
 
     # Boxplots
     x0 = [data[pt][0][:,i],data[pt][33][:,i],sigCancer]
@@ -316,40 +316,7 @@ for pt in data:
     data[pt]['measurement{}Fig'.format(i)] = fig
     plt.savefig('measurement{}Fig{}.png'.format(i,data[pt]['id']),dpi=1000)
 
-# %% Mean/StD values for each measurement
-avg = np.zeros((2,3))
-med = np.zeros((2,3))
-sd = np.zeros((2,3))
-avgDensity = np.zeros(2)
-sdDensity = np.zeros(2)
-
-avg[0,0] = np.mean(healthy[:,0],axis=0)
-avg[0,1] = np.mean(healthy[:,1],axis=0)
-avg[0,2] = np.mean(healthy[:,2],axis=0)
-avg[1,0] = np.mean(totCancer[:,0],axis=0)
-avg[1,1] = np.mean(totCancer[:,1],axis=0)
-avg[1,2] = np.mean(totCancer[:,2],axis=0)
-
-med[0,0] = np.median(healthy[:,0],axis=0)
-med[0,1] = np.median(healthy[:,1],axis=0)
-med[0,2] = np.median(healthy[:,2],axis=0)
-med[1,0] = np.median(totCancer[:,0],axis=0)
-med[1,1] = np.median(totCancer[:,1],axis=0)
-med[1,2] = np.median(totCancer[:,2],axis=0)
-
-sd[0,0] = np.std(healthy[:,0],axis=0)
-sd[0,1] = np.std(healthy[:,1],axis=0)
-sd[0,2] = np.std(healthy[:,2],axis=0)
-sd[1,0] = np.std(totCancer[:,0],axis=0)
-sd[1,1] = np.std(totCancer[:,1],axis=0)
-sd[1,2] = np.std(totCancer[:,2],axis=0)
-
-avgDensity[0] = np.mean(density[logical,0])
-avgDensity[1] = np.mean(density[~logical,0])
-sdDensity[0] = np.std(density[logical,0])
-sdDensity[1] = np.std(density[~logical,0])
-
-# %% Plot Histograms
+# %% Plot OLD Histograms
 i = 0 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
 
 bins = np.linspace(0,1,100)
@@ -375,33 +342,6 @@ for i in range(3):
     fig.suptitle('Comparison of Cancerous and Healthy Duct Sizes')
 
     fig.show()
-
-# %% Boxplots
-i = 0
-plt.boxplot([healthy[:,i],totCancer[:,i],g33[:,i],g34[:,i],g43[:,i],g44[:,i]])
-plt.ylim((0,0.1))
-plt.show()
-
-# %%
-plt.boxplot(healthy[:,i])
-plt.title('Healthy')
-plt.show()
-plt.boxplot(totCancer[:,i])
-plt.title('totCancer')
-plt.show()
-plt.boxplot(g33[:,i])
-plt.title('G33')
-plt.show()
-plt.boxplot(g34[:,i])
-plt.title('G34')
-plt.show()
-plt.boxplot(g43[:,i])
-plt.title('G43')
-plt.show()
-plt.boxplot(g44[:,i])
-plt.title('G44')
-plt.show()
-
 
 # %% Z-Score the data
 zhealthy = zscore(healthy,ddof=1)
@@ -433,11 +373,5 @@ dataType = ['Area', 'Equivalent Diameter', 'Major Axis Length']
 
 for i in range(stat.shape[0]):
     print('{} stat: {}; pval: {}'.format(dataType[ii],stat[i,ii],pval[i,ii]))
-
-
-
-# %% Density Boxplot
-plt.boxplot([density[logical,0],density[log33,0]])
-plt.show()
 
 # %% 200 um Dataset
