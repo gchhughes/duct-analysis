@@ -4,9 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import ks_2samp, zscore, ttest_rel
 
+
+
 # %% Messing around with dictionaries
 pathDir = r'C:\Users\griff\Box\CASIT\Files for Derrick\duct-analysis'
-trackerDir = pathDir + '\Tracker.xlsx'
+trackerPath = pathDir + '\Tracker.xlsx'
+rawPath = pathDir + '\\raw.xlsx'
 data = {} # Going to use nested dictionaries
 
 # Find completed cases using Tracker spreadsheet
@@ -17,41 +20,42 @@ for i in range(tracker.shape[0]):
         logical[i] = True
 
 temp = tracker.loc[logical,'ID'].values
-for i in range(len(temp)):
+numPts = len(temp)
+for i in range(numPts):
     data[i] = {}
     data[i]['id'] = str(temp[i]).zfill(3)
-    data[i]['dataPath'] = '{}\\data\\data_{}.xlsx'.format(pathDir,data[i]['id'])
+
+
 
 # %% Import data using np.r_
 measurements = ['Area (mm^2)','Equivalent Diameter (mm)','Major Axis Length (mm)']
 grades = [0,33,34,43,44,45,54,55]
-totDucts = {}
+data['total'] = {}
 
 # Arrays to store total ducts for each grade
 for grade in grades:
-    totDucts[grade] = np.zeros((1,5)) # Update size depending on spreadsheet
+    data['total'][grade] = np.zeros((1,10)) # Update size depending on spreadsheet
 
-totDucts['cancerNo33'] = np.zeros((1,5))
-totDucts['cancer33'] = np.zeros((1,5))
-totDucts['ratio'] = np.zeros((1,2))
+data['total']['sigCancer'] = np.zeros((1,10))
+data['total']['ratio'] = np.zeros((1,2))
 
-maxVal = np.zeros((len(data),3)) # Area, Equivalent Diamater, Major Axis Length
+maxVal = np.zeros((numPts,3)) # Area, Equivalent Diamater, Major Axis Length
 
-for i in range(len(data)):
-    data[i]['rawData'] = pd.read_excel(data[i]['dataPath'],usecols='A:E').values
-    data[i]['rawData'][:,0:3] = data[i]['rawData'][:,0:3]*1000
+for i in range(numPts):
+    data[i]['rawData'] = pd.read_excel(rawPath,usecols='A:J',
+        sheet_name='{}'.format(data[i]['id'])).values
+    data[i]['rawData'][:,7:10] = data[i]['rawData'][:,7:10]*1000
     
     # Record max values in case they're needed later
-    maxVal[i,0] = np.max(data[i]['rawData'][:,0])
-    maxVal[i,1] = np.max(data[i]['rawData'][:,1])
-    maxVal[i,2] = np.max(data[i]['rawData'][:,2])
+    maxVal[i,0] = np.max(data[i]['rawData'][:,7])
+    maxVal[i,1] = np.max(data[i]['rawData'][:,8])
+    maxVal[i,2] = np.max(data[i]['rawData'][:,9])
 
-    # Temporary arrays to store patient specific data
+    # Arrays to store patient specific data
     for grade in grades:
-        data[i][grade] = np.zeros((1,5))
+        data[i][grade] = np.zeros((1,10))
 
-    data[i]['cancerNo33'] = np.zeros((1,5))
-    data[i]['cancer33'] = np.zeros((1,5))
+    data[i]['sigCancer'] = np.zeros((1,10))
     data[i]['ratio'] = np.zeros((1,2))
 
     print('{}: {}'.format(data[i]['id'],data[i]['rawData'].shape))
@@ -60,111 +64,98 @@ for i in range(len(data)):
     for ii in range(data[i]['rawData'].shape[0]):
 
         # Patient specific duct sizes (Need to update if column headers change)
-        if data[i]['rawData'][ii,4] == 0:
+        if data[i]['rawData'][ii,2] == 0:
             data[i][0] = np.r_['0,2',data[i][0],data[i]['rawData'][ii,:]]
-        elif data[i]['rawData'][ii,4] == 33:
+        elif data[i]['rawData'][ii,2] == 33:
             data[i][33] = np.r_['0,2',data[i][33],data[i]['rawData'][ii,:]]
-        elif data[i]['rawData'][ii,4] == 34:
+        elif data[i]['rawData'][ii,2] == 34:
             data[i][34] = np.r_['0,2',data[i][34],data[i]['rawData'][ii,:]]
-        elif data[i]['rawData'][ii,4] == 43:
+        elif data[i]['rawData'][ii,2] == 43:
             data[i][43] = np.r_['0,2',data[i][43],data[i]['rawData'][ii,:]]
-        elif data[i]['rawData'][ii,4] == 44:
+        elif data[i]['rawData'][ii,2] == 44:
             data[i][44] = np.r_['0,2',data[i][44],data[i]['rawData'][ii,:]]
-        elif data[i]['rawData'][ii,4] == 45:
-            data[i][45] = np.r_['0,2',t45,data[i]['rawData'][ii,:]]
-        elif data[i]['rawData'][ii,4] == 54:
+        elif data[i]['rawData'][ii,2] == 45:
+            data[i][45] = np.r_['0,2',data[i][45],data[i]['rawData'][ii,:]]
+        elif data[i]['rawData'][ii,2] == 54:
             data[i][54] = np.r_['0,2',data[i][54],data[i]['rawData'][ii,:]]
-        elif data[i]['rawData'][ii,4] == 55:
+        elif data[i]['rawData'][ii,2] == 55:
             data[i][55] = np.r_['0,2',data[i][55],data[i]['rawData'][ii,:]]
 
         # Ductal Ratio (Need to update if column headers change)
         if ii == 0: # Save first ratio we see
-            tempRatio = data[i]['rawData'][ii,3:5]
-            totDucts['ratio'] = np.r_['0,2',totDucts['ratio'],tempRatio]
+            tempRatio = data[i]['rawData'][ii,[2,6]]
+            data['total']['ratio'] = np.r_['0,2',data['total']['ratio'],tempRatio]
             data[i]['ratio'] = np.r_['0,2',data[i]['ratio'],tempRatio]
-        elif tempRatio[0] != data[i]['rawData'][ii,3]: # Don't update unless it changes
-            tempRatio = data[i]['rawData'][ii,3:5]
-            totDucts['ratio'] = np.r_['0,2',totDucts['ratio'],tempRatio]
+        elif tempRatio[1] != data[i]['rawData'][ii,6]: # Don't update unless it changes
+            tempRatio = data[i]['rawData'][ii,[2,6]]
+            data['total']['ratio'] = np.r_['0,2',data['total']['ratio'],tempRatio]
             data[i]['ratio'] = np.r_['0,2',data[i]['ratio'],tempRatio]
 
-    # Update total arrays in totDucts dictionary
+    # Update total arrays in data['total'] dictionary and append sigCancer
     for grade in grades:
         # Remove first row that is all zeros
         data[i][grade] = data[i][grade][1:data[i][grade].shape[0],:]
 
-        # Add to appropriate totDucts array
-        totDucts[grade] = np.append(totDucts[grade],data[i][grade],axis=0)
+        # Add to appropriate data['total'] array
+        data['total'][grade] = np.append(data['total'][grade],data[i][grade],axis=0)
 
         if grade != 0 and grade != 33:
-            totDucts['cancerNo33'] = np.append(totDucts['cancerNo33'],data[i][grade],axis=0)
-            data[i]['cancerNo33'] = np.append(data[i]['cancerNo33'],data[i][grade],axis=0)
-
-        if grade != 0:
-            totDucts['cancer33'] = np.append(totDucts['cancer33'],data[i][grade],axis=0)
-            data[i]['cancer33'] = np.append(data[i]['cancer33'],data[i][grade],axis=0)
+            data['total']['sigCancer'] = np.append(data['total']['sigCancer'],data[i][grade],axis=0)
+            data[i]['sigCancer'] = np.append(data[i]['sigCancer'],data[i][grade],axis=0)
 
 print('\nSize of array')
 # Remove first row that is all zeros
-for key in totDucts:
-    totDucts[key] = totDucts[key][1:totDucts[key].shape[0],:]
-    print('{}: {}'.format(key,totDucts[key].shape))
+for key in data['total']:
+    data['total'][key] = data['total'][key][1:data['total'][key].shape[0],:]
+    print('{}: {}'.format(key,data['total'][key].shape))
+
+
 
 # %% Separate density by healthy vs cancer (and no 3+3)
-ratioBools = ['ratio0Bool','ratio33Bool','ratio34Bool','ratio43Bool','ratio44Bool']
+rBools = ['r0Bool','r33Bool','r34Bool','r43Bool','r44Bool']
 
 # Totals
-for ratioBool in ratioBools:
-    totDucts[ratioBool] = np.zeros(totDucts['ratio'].shape[0]).astype('bool')
-
-for i in range(totDucts['ratio'].shape[0]):
-    if totDucts['ratio'][i,1] == 0:
-        totDucts['ratio0Bool'][i] = True
-    elif totDucts['ratio'][i,1] == 33:
-        totDucts['ratio33Bool'][i] = True
-    elif totDucts['ratio'][i,1] == 34:
-        totDucts['ratio34Bool'][i] = True
-    elif totDucts['ratio'][i,1] == 43:
-        totDucts['ratio43Bool'][i] = True
-    elif totDucts['ratio'][i,1] == 44:
-        totDucts['ratio44Bool'][i] = True
-
-# Do the same for each patient
-for pt in data:
-    for ratioBool in ratioBools:
-        data[pt][ratioBool] = np.zeros(data[pt]['ratio'].shape[0]).astype('bool')
+for key in data:
+    for rBool in rBools:
+        data[key][rBool] = np.zeros(data[key]['ratio'].shape[0]).astype('bool')
     
-    for i in range(data[pt]['ratio'].shape[0]):
-        if data[pt]['ratio'][i,1] == 0:
-            data[pt]['ratio0Bool'][i] = True
-        elif data[pt]['ratio'][i,1] == 33:
-            data[pt]['ratio33Bool'][i] = True
-        elif data[pt]['ratio'][i,1] == 34:
-            data[pt]['ratio34Bool'][i] = True
-        elif data[pt]['ratio'][i,1] == 43:
-            data[pt]['ratio43Bool'][i] = True
-        elif data[pt]['ratio'][i,1] == 44:
-            data[pt]['ratio44Bool'][i] = True
+    for i in range(data[key]['ratio'].shape[0]):
+        if data[key]['ratio'][i,0] == 0:
+            data[key]['r0Bool'][i] = True
+        elif data[key]['ratio'][i,0] == 33:
+            data[key]['r33Bool'][i] = True
+        elif data[key]['ratio'][i,0] == 34:
+            data[key]['r34Bool'][i] = True
+        elif data[key]['ratio'][i,0] == 43:
+            data[key]['r43Bool'][i] = True
+        elif data[key]['ratio'][i,0] == 44:
+            data[key]['r44Bool'][i] = True
+
+# %%
+data['total']['ratio'][data['total']['r33Bool'],0],
+'Insignificant Cancer (N={})'.format(data['total']['ratio'][data['total']['ratio33Bool']].shape[0]),
+
+
 
 # %% Total Ductal Ratio Box & Whisker + Mean & StD
 # Boxplots
-x = [totDucts['ratio'][totDucts['ratio0Bool'],0],
-    totDucts['ratio'][totDucts['ratio33Bool'],0],
-    totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool']),0]]
-labels = ['Healthy (N={})'.format(totDucts['ratio'][totDucts['ratio0Bool']].shape[0]),
-    'Insignificant Cancer (N={})'.format(totDucts['ratio'][totDucts['ratio33Bool']].shape[0]),
-    'Significant Cancer (N={})'.format(totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool'])].shape[0])]
+x = [data['total']['ratio'][data['total']['r0Bool'],1],
+    data['total']['ratio'][~(data['total']['r0Bool']+data['total']['r33Bool']),1]]
+labels = ['Healthy (N={})'.format(data['total']['ratio'][data['total']['r0Bool']].shape[0]),
+    'Significant Cancer (N={})'.format(data['total']['ratio'][~(data['total']['r0Bool']+data['total']['r33Bool'])].shape[0])]
 
+plt.figure(figsize=(4,6),dpi=1000)
 plt.boxplot(x,labels=labels)
 plt.xticks(rotation=-20)
 plt.title('Total Ductal Ratio (Median and IQR)')
 plt.ylabel('Ductal Ratio')
 plt.show()
 
-x = [totDucts['ratio'][totDucts['ratio0Bool'],0],
-    totDucts['ratio'][totDucts['ratio33Bool'],0],
-    totDucts['ratio'][totDucts['ratio34Bool'],0],
-    totDucts['ratio'][totDucts['ratio43Bool'],0],
-    totDucts['ratio'][totDucts['ratio44Bool'],0]]
+x = [data['total']['ratio'][data['total']['r0Bool'],1],
+    data['total']['ratio'][data['total']['r33Bool'],1],
+    data['total']['ratio'][data['total']['r34Bool'],1],
+    data['total']['ratio'][data['total']['r43Bool'],1],
+    data['total']['ratio'][data['total']['r44Bool'],1]]
 labels = ['Healthy','3+3','3+4','4+3','4+4']
 plt.boxplot(x,labels=labels)
 plt.title('Total Ductal Ratio (Median and IQR)')
@@ -175,24 +166,28 @@ plt.show()
 ratioMeanStD = np.zeros((2,7))
 xAxis = np.arange(0,7,1)
 
-for i in range(len(ratioBools)):
-    ratioMeanStD[0,i] = np.mean(totDucts['ratio'][totDucts[ratioBools[i]],0])
-    ratioMeanStD[1,i] = np.std(totDucts['ratio'][totDucts[ratioBools[i]],0])
+for i in range(len(rBools)):
+    ratioMeanStD[0,i] = np.mean(data['total']['ratio'][data['total'][rBools[i]],1])
+    ratioMeanStD[1,i] = np.std(data['total']['ratio'][data['total'][rBools[i]],1])
 
 # Cancer (w/ 3+3)
-ratioMeanStD[0,5] = np.mean(totDucts['ratio'][~totDucts['ratio0Bool'],0])
-ratioMeanStD[1,5] = np.std(totDucts['ratio'][~totDucts['ratio0Bool'],0])
+ratioMeanStD[0,5] = np.mean(data['total']['ratio'][~data['total']['r0Bool'],1])
+ratioMeanStD[1,5] = np.std(data['total']['ratio'][~data['total']['r0Bool'],1])
 
 # Cancer (No 3+3)
-ratioMeanStD[0,6] = np.mean(totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool']),0])
-ratioMeanStD[1,6] = np.std(totDucts['ratio'][~(totDucts['ratio0Bool']+totDucts['ratio33Bool']),0])
+ratioMeanStD[0,6] = np.mean(data['total']['ratio'][~(data['total']['r0Bool']+data['total']['r33Bool']),1])
+ratioMeanStD[1,6] = np.std(data['total']['ratio'][~(data['total']['r0Bool']+data['total']['r33Bool']),1])
 
-plt.scatter(xAxis,ratioMeanStD[0,:])
-plt.errorbar(xAxis,ratioMeanStD[0,:],yerr=ratioMeanStD[1,:],fmt='o')
+plt.scatter(0,ratioMeanStD[0,0])
+plt.errorbar(0,ratioMeanStD[0,0],yerr=ratioMeanStD[1,0],fmt='o')
+plt.scatter(1,ratioMeanStD[0,6])
+plt.errorbar(1,ratioMeanStD[0,6],yerr=ratioMeanStD[1,6],fmt='o')
 plt.title('Ductal Ratio (Mean and StD)')
 plt.ylabel('Ductal Ratio')
 plt.xlabel('Healthy, 33, 34, 43, 44, Cancer (w/ 33), Cancer (No 33)')
 plt.show()
+
+
 
 # %% Patient Specific Ductal Ratio Box & Whisker + Mean & StD
 xAxis = np.arange(0,7,1)
@@ -249,6 +244,8 @@ for pt in data:
 # %% Equivalent Diameter Histograms
 i = 1
 
+sigCancer = np.concatenate((data['total'][34][:,i],data['total'][43][:,i],data['total'][44][:,i],data['total'][45][:,i],data['total'][54][:,i],data['total'][55][:,i]),axis=0)
+
 # Create bins for data
 n = 10 # bin size
 bins = np.arange(70,500+n,n)
@@ -257,76 +254,82 @@ bins = np.arange(70,500+n,n)
 
 # Histograms
 fig,ax = plt.subplots(figsize=(9,5))
+x = [np.clip(sigCancer,bins[0],bins[-1]),np.clip(data['total'][0][:,i],bins[0],bins[-1])]
 
-ax[0].hist(np.clip(totDucts[0][:,i],bins[0],bins[-1]),bins=bins)
+ax.hist(x,bins=bins,density=True,color=['b','r'])
 xlabels = bins[1:].astype(str)
 xlabels[-1] += '+'
-ax[0].set_xticklabels(xlabels)
+ax.set_xticklabels(xlabels)
 
 fig.show()
 
+
+
 # %% Equivalent Diameter Percentage
 i = 1
-j = 200 # ED we're screening for
+j = 70 # ED we're screening for
+k = 1000
 
-totDucts['percent'] = np.zeros(6) # Update if 45,54,55 are included
-sigCancer = np.concatenate((totDucts[34][:,i],totDucts[43][:,i],totDucts[44][:,i],totDucts[45][:,i],totDucts[54][:,i],totDucts[55][:,i]),axis=0)
+data['total']['percent'] = np.zeros(6) # Update if 45,54,55 are included
+sigCancer = np.concatenate((data['total'][34][:,i],data['total'][43][:,i],data['total'][44][:,i],data['total'][45][:,i],data['total'][54][:,i],data['total'][55][:,i]),axis=0)
 
 
 for ii in range(5): # Update if 45,54,55 are included
-    totDucts['percent'][ii] = sum(val > j for val in totDucts[grades[ii]][:,i])/(totDucts[grades[ii]].shape[0])
+    data['total']['percent'][ii] = sum(val > j for val in data['total'][grades[ii]][:,i])/(data['total'][grades[ii]].shape[0])
 
-totDucts['percent'][5] = sum(val > j for val in sigCancer)/(sigCancer.shape[0])
+data['total']['percent'][5] = sum(val > j for val in sigCancer)/(sigCancer.shape[0])
+
+
 
 # %% Total Measurements Box & Whisker + Mean & StD
 xAxis = np.arange(0,6,1)
-i = 0 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
+i = 8 # 7: Area; 8: Equivalent Diameter; 9: Major Axis Length
 
 fig,ax = plt.subplots(2,2)
 plt.subplots_adjust(hspace = 0.7,wspace = 0.3)
     
-fig.suptitle('Total Area Boxplot, Mean & StD')
-fig.supylabel('Area (µm^2)')
-
-sigCancer = np.concatenate((totDucts[34][:,i],totDucts[43][:,i],totDucts[44][:,i],totDucts[45][:,i],totDucts[54][:,i],totDucts[55][:,i]),axis=0)
+fig.suptitle('Total Equivalent Diameter Boxplot, Mean & StD')
+fig.supylabel('Equivalent Diameter (µm)')
 
 # Boxplots
-x0 = [totDucts[0][:,i],totDucts[33][:,i],sigCancer]
-labels0 = ['H (N={})'.format(totDucts[0].shape[0]),'IC (N={})'.format(totDucts[33].shape[0]),'SC (N={})'.format(sigCancer.shape[0])]
+x0 = [data['total'][0][:,i],data['total'][33][:,i],data['total']['sigCancer'][:,i]]
+labels0 = ['H (N={})'.format(data['total'][0].shape[0]),'IC (N={})'.format(data['total'][33].shape[0]),'SC (N={})'.format(data['total']['sigCancer'].shape[0])]
 
-ax[0,0].boxplot(x0,labels=labels0)
+ax[0,0].boxplot(x0,labels=labels0,sym='')
 ax[0,0].tick_params(axis='x', rotation=-20)
-# ax[0,0].axhline(y=135, color='r', linestyle='-')
+ax[0,0].axhline(y=200, color='r', linestyle='-')
 ax[0,0].set_title('Median and IQR')
 
 # Update if cases have 4+5, 5+4, and 5+5
-x1 = [totDucts[0][:,i],totDucts[33][:,i],totDucts[34][:,i],
-    totDucts[43][:,i],totDucts[44][:,i]]
+x1 = [data['total'][0][:,i],data['total'][33][:,i],data['total'][34][:,i],
+    data['total'][43][:,i],data['total'][44][:,i]]
 labels1 = ['H','33','34','43','44']
-ax[1,0].boxplot(x1,labels=labels1)
-# ax[1,0].axhline(y=135, color='r', linestyle='-')
+ax[1,0].boxplot(x1,labels=labels1,sym='')
+ax[1,0].axhline(y=200, color='r', linestyle='-')
 
 # Calculate Mean & StD
-totDucts['measurementsMeanStD'] = np.zeros((2,6)) # Change length if all GGs are present
+data['total']['measurementsMeanStD'] = np.zeros((2,6)) # Change length if all GGs are present
 
 for iii in range(len(grades[0:5])): # Change length if all GGs are present
-    totDucts['measurementsMeanStD'][0,iii] = np.mean(totDucts[grades[iii]][:,i])
-    totDucts['measurementsMeanStD'][1,iii] = np.std(totDucts[grades[iii]][:,i])
+    data['total']['measurementsMeanStD'][0,iii] = np.mean(data['total'][grades[iii]][:,i])
+    data['total']['measurementsMeanStD'][1,iii] = np.std(data['total'][grades[iii]][:,i])
 
 # Significant cancer
-totDucts['measurementsMeanStD'][0,5] = np.mean(sigCancer)
-totDucts['measurementsMeanStD'][1,5] = np.std(sigCancer)
+data['total']['measurementsMeanStD'][0,5] = np.mean(data['total']['sigCancer'][:,i])
+data['total']['measurementsMeanStD'][1,5] = np.std(data['total']['sigCancer'][:,i])
 
-ax[0,1].scatter(xAxis,totDucts['measurementsMeanStD'][0,:])
-ax[0,1].errorbar(xAxis,totDucts['measurementsMeanStD'][0,:],yerr=totDucts['measurementsMeanStD'][1,:],fmt='o')
+ax[0,1].scatter(xAxis,data['total']['measurementsMeanStD'][0,:])
+ax[0,1].errorbar(xAxis,data['total']['measurementsMeanStD'][0,:],yerr=data['total']['measurementsMeanStD'][1,:],fmt='o')
 ax[0,1].set_title('Mean & StD')
-# ax[0,1].axhline(y=135, color='r', linestyle='-')
+ax[0,1].axhline(y=200, color='r', linestyle='-')
 ax[0,1].set_xticks(range(6),labels=['H','33','34','43','44','SC'])
 
 fig.delaxes(ax[1,1])
 
-totDucts['totalMeasurement{}'.format(i)] = fig
+data['total']['totalMeasurement{}'.format(i)] = fig
 plt.savefig('totalMeasurement{}.png'.format(i),dpi=1000)
+
+
 
 # %% Patient Specific Measurements Box & Whisker + Mean & StD
 xAxis = np.arange(0,6,1)
@@ -345,17 +348,17 @@ for pt in data:
     x0 = [data[pt][0][:,i],data[pt][33][:,i],sigCancer]
     labels0 = ['H (N={})'.format(data[pt][0].shape[0]),'IC (N={})'.format(data[pt][33].shape[0]),'SC (N={})'.format(sigCancer.shape[0])]
 
-    ax[0,0].boxplot(x0,labels=labels0)
+    ax[0,0].boxplot(x0,labels=labels0,sym='')
     ax[0,0].tick_params(axis='x', rotation=-20)
-    ax[0,0].axhline(y=135, color='r', linestyle='-')
+    ax[0,0].axhline(y=200, color='r', linestyle='-')
     ax[0,0].set_title('Median and IQR')
 
     # Update if cases have 4+5, 5+4, and 5+5
     x1 = [data[pt][0][:,i],data[pt][33][:,i],data[pt][34][:,i],
         data[pt][43][:,i],data[pt][44][:,i]]
     labels1 = ['H','33','34','43','44']
-    ax[1,0].boxplot(x1,labels=labels1)
-    ax[1,0].axhline(y=135, color='r', linestyle='-')
+    ax[1,0].boxplot(x1,labels=labels1,sym='')
+    ax[1,0].axhline(y=200, color='r', linestyle='-')
 
     # Calculate Mean & StD
     data[pt]['measurementsMeanStD'] = np.zeros((2,6)) # Change length if all GGs are present
@@ -371,13 +374,15 @@ for pt in data:
     ax[0,1].scatter(xAxis,data[pt]['measurementsMeanStD'][0,:])
     ax[0,1].errorbar(xAxis,data[pt]['measurementsMeanStD'][0,:],yerr=data[pt]['measurementsMeanStD'][1,:],fmt='o')
     ax[0,1].set_title('Mean & StD')
-    ax[0,1].axhline(y=135, color='r', linestyle='-')
+    ax[0,1].axhline(y=200, color='r', linestyle='-')
     ax[0,1].set_xticks(range(6),labels=['H','33','34','43','44','SC'])
 
     fig.delaxes(ax[1,1])
 
     data[pt]['measurement{}Fig'.format(i)] = fig
     plt.savefig('measurement{}Fig{}.png'.format(i,data[pt]['id']),dpi=1000)
+
+
 
 # %% Plot OLD Histograms
 i = 0 # 0: Area; 1: Equivalent Diameter; 2: Major Axis Length
