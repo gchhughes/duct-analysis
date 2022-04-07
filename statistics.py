@@ -163,28 +163,29 @@ plt.ylabel('Ductal Ratio')
 plt.show()
 
 # Calculate Mean & StD
-ratioMeanStD = np.zeros((2,7))
+data['total']['ratioMeanStD'] = np.zeros((2,7))
 xAxis = np.arange(0,7,1)
 
 for i in range(len(rBools)):
-    ratioMeanStD[0,i] = np.mean(data['total']['ratio'][data['total'][rBools[i]],1])
-    ratioMeanStD[1,i] = np.std(data['total']['ratio'][data['total'][rBools[i]],1])
+    data['total']['ratioMeanStD'][0,i] = np.mean(data['total']['ratio'][data['total'][rBools[i]],1])
+    data['total']['ratioMeanStD'][1,i] = np.std(data['total']['ratio'][data['total'][rBools[i]],1])
 
 # Cancer (w/ 3+3)
-ratioMeanStD[0,5] = np.mean(data['total']['ratio'][~data['total']['r0Bool'],1])
-ratioMeanStD[1,5] = np.std(data['total']['ratio'][~data['total']['r0Bool'],1])
+data['total']['ratioMeanStD'][0,5] = np.mean(data['total']['ratio'][~data['total']['r0Bool'],1])
+data['total']['ratioMeanStD'][1,5] = np.std(data['total']['ratio'][~data['total']['r0Bool'],1])
 
 # Cancer (No 3+3)
-ratioMeanStD[0,6] = np.mean(data['total']['ratio'][~(data['total']['r0Bool']+data['total']['r33Bool']),1])
-ratioMeanStD[1,6] = np.std(data['total']['ratio'][~(data['total']['r0Bool']+data['total']['r33Bool']),1])
+data['total']['ratioMeanStD'][0,6] = np.mean(data['total']['ratio'][~(data['total']['r0Bool']+data['total']['r33Bool']),1])
+data['total']['ratioMeanStD'][1,6] = np.std(data['total']['ratio'][~(data['total']['r0Bool']+data['total']['r33Bool']),1])
 
-plt.scatter(0,ratioMeanStD[0,0])
-plt.errorbar(0,ratioMeanStD[0,0],yerr=ratioMeanStD[1,0],fmt='o')
-plt.scatter(1,ratioMeanStD[0,6])
-plt.errorbar(1,ratioMeanStD[0,6],yerr=ratioMeanStD[1,6],fmt='o')
+plt.figure(figsize=(4,6),dpi=1000)
+plt.scatter([0,1],data['total']['ratioMeanStD'][0,[0,6]])
+plt.errorbar([0,1],data['total']['ratioMeanStD'][0,[0,6]],yerr=data['total']['ratioMeanStD'][1,[0,6]],fmt='o',capsize=3)
+#plt.scatter(1,ratioMeanStD[0,6])
+#plt.errorbar(1,ratioMeanStD[0,6],yerr=ratioMeanStD[1,6],fmt='o',capsize=3)
 plt.title('Ductal Ratio (Mean and StD)')
 plt.ylabel('Ductal Ratio')
-plt.xlabel('Healthy, 33, 34, 43, 44, Cancer (w/ 33), Cancer (No 33)')
+# plt.axes().set_xticks([0,1],labels=['Healthy','Significant Cancer'])
 plt.show()
 
 
@@ -208,18 +209,18 @@ for pt in data:
     ax[0,0].boxplot(x0,labels=labels0)
     ax[0,0].set_title('Median and IQR')
 
-    x1 = [data[pt]['ratio'][data[pt]['ratio0Bool'],0],
-        data[pt]['ratio'][data[pt]['ratio33Bool'],0],
-        data[pt]['ratio'][data[pt]['ratio34Bool'],0],
-        data[pt]['ratio'][data[pt]['ratio43Bool'],0],
-        data[pt]['ratio'][data[pt]['ratio44Bool'],0]]
+    x1 = [data[pt]['ratio'][data[pt]['r0Bool'],0],
+        data[pt]['ratio'][data[pt]['r33Bool'],0],
+        data[pt]['ratio'][data[pt]['r34Bool'],0],
+        data[pt]['ratio'][data[pt]['r43Bool'],0],
+        data[pt]['ratio'][data[pt]['r44Bool'],0]]
     labels1 = ['H','33','34','43','44']
     ax[1,0].boxplot(x1,labels=labels1)
 
     # Calculate Mean & StD
     data[pt]['ratioMeanStD'] = np.zeros((2,7))
 
-    for i in range(len(ratioBools)):
+    for i in range(len(rBools)):
         data[pt]['ratioMeanStD'][0,i] = np.mean(data[pt]['ratio'][data[pt][ratioBools[i]],0])
         data[pt]['ratioMeanStD'][1,i] = np.std(data[pt]['ratio'][data[pt][ratioBools[i]],0])
 
@@ -232,7 +233,7 @@ for pt in data:
     data[pt]['ratioMeanStD'][1,6] = np.std(data[pt]['ratio'][~(data[pt]['ratio0Bool']+data[pt]['ratio33Bool']),0])
 
     ax[0,1].scatter(xAxis,data[pt]['ratioMeanStD'][0,:])
-    ax[0,1].errorbar(xAxis,data[pt]['ratioMeanStD'][0,:],yerr=data[pt]['ratioMeanStD'][1,:],fmt='o')
+    ax[0,1].errorbar(xAxis,data[pt]['ratioMeanStD'][0,:],yerr=data[pt]['ratioMeanStD'][1,:],fmt='o',marker='^', capsize=3)
     ax[0,1].set_title('Mean & StD')
     ax[0,1].set_xlabel('H, 33, 34, 43, 44, C (w/ 33), C (No 33)')
 
@@ -266,24 +267,22 @@ fig.show()
 
 
 # %% Equivalent Diameter Percentage
-i = 1
-j = 70 # ED we're screening for
+i = 8
+j = 200 # ED we're screening for
 k = 1000
 
 data['total']['percent'] = np.zeros(6) # Update if 45,54,55 are included
-sigCancer = np.concatenate((data['total'][34][:,i],data['total'][43][:,i],data['total'][44][:,i],data['total'][45][:,i],data['total'][54][:,i],data['total'][55][:,i]),axis=0)
-
 
 for ii in range(5): # Update if 45,54,55 are included
     data['total']['percent'][ii] = sum(val > j for val in data['total'][grades[ii]][:,i])/(data['total'][grades[ii]].shape[0])
 
-data['total']['percent'][5] = sum(val > j for val in sigCancer)/(sigCancer.shape[0])
+data['total']['percent'][5] = sum(val > j for val in data['total']['sigCancer'][:,i])/(data['total']['sigCancer'].shape[0])
 
 
 
 # %% Total Measurements Box & Whisker + Mean & StD
 xAxis = np.arange(0,6,1)
-i = 8 # 7: Area; 8: Equivalent Diameter; 9: Major Axis Length
+i = 7 # 7: Area; 8: Equivalent Diameter; 9: Major Axis Length
 
 fig,ax = plt.subplots(2,2)
 plt.subplots_adjust(hspace = 0.7,wspace = 0.3)
@@ -308,18 +307,18 @@ ax[1,0].boxplot(x1,labels=labels1,sym='')
 ax[1,0].axhline(y=200, color='r', linestyle='-')
 
 # Calculate Mean & StD
-data['total']['measurementsMeanStD'] = np.zeros((2,6)) # Change length if all GGs are present
+data['total']['measurement{}MeanStD'.format(i)] = np.zeros((2,6)) # Change length if all GGs are present
 
 for iii in range(len(grades[0:5])): # Change length if all GGs are present
-    data['total']['measurementsMeanStD'][0,iii] = np.mean(data['total'][grades[iii]][:,i])
-    data['total']['measurementsMeanStD'][1,iii] = np.std(data['total'][grades[iii]][:,i])
+    data['total']['measurement{}MeanStD'.format(i)][0,iii] = np.mean(data['total'][grades[iii]][:,i])
+    data['total']['measurement{}MeanStD'.format(i)][1,iii] = np.std(data['total'][grades[iii]][:,i])
 
 # Significant cancer
-data['total']['measurementsMeanStD'][0,5] = np.mean(data['total']['sigCancer'][:,i])
-data['total']['measurementsMeanStD'][1,5] = np.std(data['total']['sigCancer'][:,i])
+data['total']['measurement{}MeanStD'.format(i)][0,5] = np.mean(data['total']['sigCancer'][:,i])
+data['total']['measurement{}MeanStD'.format(i)][1,5] = np.std(data['total']['sigCancer'][:,i])
 
-ax[0,1].scatter(xAxis,data['total']['measurementsMeanStD'][0,:])
-ax[0,1].errorbar(xAxis,data['total']['measurementsMeanStD'][0,:],yerr=data['total']['measurementsMeanStD'][1,:],fmt='o')
+ax[0,1].scatter(xAxis,data['total']['measurement{}MeanStD'.format(i)][0,:])
+ax[0,1].errorbar(xAxis,data['total']['measurement{}MeanStD'.format(i)][0,:],yerr=data['total']['measurement{}MeanStD'.format(i)][1,:],fmt='o')
 ax[0,1].set_title('Mean & StD')
 ax[0,1].axhline(y=200, color='r', linestyle='-')
 ax[0,1].set_xticks(range(6),labels=['H','33','34','43','44','SC'])
@@ -328,6 +327,35 @@ fig.delaxes(ax[1,1])
 
 data['total']['totalMeasurement{}'.format(i)] = fig
 plt.savefig('totalMeasurement{}.png'.format(i),dpi=1000)
+
+
+
+# %% Abstract Figure
+fig,ax = plt.subplots(1,2)
+plt.subplots_adjust(hspace = 0.7,wspace = 0.5)
+
+# Ductal Ratio
+ax[0].scatter([0,1],data['total']['ratioMeanStD'][0,[0,6]],c=['b','r'])
+ax[0].errorbar(0,data['total']['ratioMeanStD'][0,0],yerr=data['total']['ratioMeanStD'][1,0],fmt='o',capsize=4,ecolor='b')
+ax[0].errorbar(1,data['total']['ratioMeanStD'][0,6],yerr=data['total']['ratioMeanStD'][1,6],fmt='o',capsize=4,ecolor='r')
+ax[0].set_xticks([0,1])
+ax[0].set_xticklabels(['Benign','Cancerous'])
+ax[0].set_xlim([-0.5,1.5])
+ax[0].set_title('Ductal Ratio')
+ax[0].set_ylabel('Ductal Ratio')
+
+# Equivalent Diameter
+ax[1].scatter([0,1],data['total']['measurement8MeanStD'][0,[0,5]],c=['b','r'])
+ax[1].errorbar(0,data['total']['measurement8MeanStD'][0,0],yerr=data['total']['measurement8MeanStD'][1,0],fmt='o',capsize=3,ecolor='b')
+ax[1].errorbar(1,data['total']['measurement8MeanStD'][0,5],yerr=data['total']['measurement8MeanStD'][1,5],fmt='o',capsize=3,ecolor='r')
+ax[1].axhline(y=200, color='k', linestyle='-')
+ax[1].set_xticks([0,1])
+ax[1].set_xticklabels(['Benign','Cancerours'])
+ax[1].set_xlim([-0.5,1.5])
+ax[1].set_title('Equivalent Diameter')
+ax[1].set_ylabel('Equivalent Diameter (µm)')
+
+plt.savefig('abstract-figure.png',dpi=1000)
 
 
 
