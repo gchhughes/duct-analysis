@@ -13,7 +13,7 @@ rawPath = pathDir + '\\raw.xlsx'
 data = {} # Going to use nested dictionaries
 
 # Find completed cases using Tracker spreadsheet
-tracker = pd.read_excel(trackerDir,sheet_name=0)
+tracker = pd.read_excel(trackerPath,sheet_name=0)
 logical = np.zeros(tracker.shape[0]).astype('bool')
 for i in range(tracker.shape[0]):
     if tracker.iloc[i,2] == 1:
@@ -201,9 +201,9 @@ for pt in data:
     fig.supylabel('Ductal Ratio')
 
     # Boxplots
-    x0 = [data[pt]['ratio'][data[pt]['ratio0Bool'],0],
-        data[pt]['ratio'][~data[pt]['ratio0Bool'],0],
-        data[pt]['ratio'][~(data[pt]['ratio0Bool']+data[pt]['ratio33Bool']),0]]
+    x0 = [data[pt]['ratio'][data[pt]['r0Bool'],0],
+        data[pt]['ratio'][~data[pt]['r0Bool'],0],
+        data[pt]['ratio'][~(data[pt]['r0Bool']+data[pt]['r33Bool']),0]]
     labels0 = ['H','C (w/ 33)','C (No 33)']
 
     ax[0,0].boxplot(x0,labels=labels0)
@@ -221,16 +221,16 @@ for pt in data:
     data[pt]['ratioMeanStD'] = np.zeros((2,7))
 
     for i in range(len(rBools)):
-        data[pt]['ratioMeanStD'][0,i] = np.mean(data[pt]['ratio'][data[pt][ratioBools[i]],0])
-        data[pt]['ratioMeanStD'][1,i] = np.std(data[pt]['ratio'][data[pt][ratioBools[i]],0])
+        data[pt]['ratioMeanStD'][0,i] = np.mean(data[pt]['ratio'][data[pt][rBools[i]],0])
+        data[pt]['ratioMeanStD'][1,i] = np.std(data[pt]['ratio'][data[pt][rBools[i]],0])
 
     # Cancer (w/ 3+3)
-    data[pt]['ratioMeanStD'][0,5] = np.mean(data[pt]['ratio'][~data[pt]['ratio0Bool'],0])
-    data[pt]['ratioMeanStD'][1,5] = np.std(data[pt]['ratio'][~data[pt]['ratio0Bool'],0])
+    data[pt]['ratioMeanStD'][0,5] = np.mean(data[pt]['ratio'][~data[pt]['r0Bool'],0])
+    data[pt]['ratioMeanStD'][1,5] = np.std(data[pt]['ratio'][~data[pt]['r0Bool'],0])
 
     # Cancer (No 3+3)
-    data[pt]['ratioMeanStD'][0,6] = np.mean(data[pt]['ratio'][~(data[pt]['ratio0Bool']+data[pt]['ratio33Bool']),0])
-    data[pt]['ratioMeanStD'][1,6] = np.std(data[pt]['ratio'][~(data[pt]['ratio0Bool']+data[pt]['ratio33Bool']),0])
+    data[pt]['ratioMeanStD'][0,6] = np.mean(data[pt]['ratio'][~(data[pt]['r0Bool']+data[pt]['r33Bool']),0])
+    data[pt]['ratioMeanStD'][1,6] = np.std(data[pt]['ratio'][~(data[pt]['r0Bool']+data[pt]['r33Bool']),0])
 
     ax[0,1].scatter(xAxis,data[pt]['ratioMeanStD'][0,:])
     ax[0,1].errorbar(xAxis,data[pt]['ratioMeanStD'][0,:],yerr=data[pt]['ratioMeanStD'][1,:],fmt='o',marker='^', capsize=3)
@@ -242,10 +242,10 @@ for pt in data:
     data[pt]['ratioFig'] = fig
     plt.savefig('ratioFig{}.png'.format(data[pt]['id']),dpi=1000)
 
-# %% Equivalent Diameter Histograms
-i = 1
 
-sigCancer = np.concatenate((data['total'][34][:,i],data['total'][43][:,i],data['total'][44][:,i],data['total'][45][:,i],data['total'][54][:,i],data['total'][55][:,i]),axis=0)
+
+# %% Equivalent Diameter Histograms
+i = 8
 
 # Create bins for data
 n = 10 # bin size
@@ -255,7 +255,7 @@ bins = np.arange(70,500+n,n)
 
 # Histograms
 fig,ax = plt.subplots(figsize=(9,5))
-x = [np.clip(sigCancer,bins[0],bins[-1]),np.clip(data['total'][0][:,i],bins[0],bins[-1])]
+x = [np.clip(data['total']['sigCancer'][:,i],bins[0],bins[-1]),np.clip(data['total'][0][:,i],bins[0],bins[-1])]
 
 ax.hist(x,bins=bins,density=True,color=['b','r'])
 xlabels = bins[1:].astype(str)
@@ -282,7 +282,7 @@ data['total']['percent'][5] = sum(val > j for val in data['total']['sigCancer'][
 
 # %% Total Measurements Box & Whisker + Mean & StD
 xAxis = np.arange(0,6,1)
-i = 7 # 7: Area; 8: Equivalent Diameter; 9: Major Axis Length
+i = 8 # 7: Area; 8: Equivalent Diameter; 9: Major Axis Length
 
 fig,ax = plt.subplots(2,2)
 plt.subplots_adjust(hspace = 0.7,wspace = 0.3)
@@ -348,9 +348,10 @@ ax[0].set_ylabel('Ductal Ratio')
 ax[1].scatter([0,1],data['total']['measurement8MeanStD'][0,[0,5]],c=['b','r'])
 ax[1].errorbar(0,data['total']['measurement8MeanStD'][0,0],yerr=data['total']['measurement8MeanStD'][1,0],fmt='o',capsize=3,ecolor='b')
 ax[1].errorbar(1,data['total']['measurement8MeanStD'][0,5],yerr=data['total']['measurement8MeanStD'][1,5],fmt='o',capsize=3,ecolor='r')
-ax[1].axhline(y=200, color='k', linestyle='-')
+ax[1].axhline(y=200, color='k', linestyle='--')
+ax[1].axhline(y=70, color='k', linestyle='--')
 ax[1].set_xticks([0,1])
-ax[1].set_xticklabels(['Benign','Cancerours'])
+ax[1].set_xticklabels(['Benign','Cancerous'])
 ax[1].set_xlim([-0.5,1.5])
 ax[1].set_title('Equivalent Diameter')
 ax[1].set_ylabel('Equivalent Diameter (µm)')
