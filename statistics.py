@@ -1,8 +1,9 @@
 # %% Modules
+from pickle import FALSE
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import ks_2samp, zscore, ttest_rel
+from scipy.stats import ks_2samp, zscore, ttest_rel, ttest_ind
 
 
 
@@ -357,6 +358,12 @@ ax[1].set_title('Equivalent Diameter')
 ax[1].set_ylabel('Equivalent Diameter (µm)')
 
 plt.savefig('abstract-figure.png',dpi=1000)
+
+
+
+# %% T-test between Benign and Cancerous Ductal Ratio
+print(ttest_ind(data['total']['ratio'][data['total']['r0Bool'],1],data['total']['ratio'][~(data['total']['r0Bool']+data['total']['r33Bool']),1],equal_var=False))
+print(ttest_ind(data['total']['ratio'][data['total']['r0Bool'],1],data['total']['ratio'][~(data['total']['r0Bool']+data['total']['r33Bool']),1]))
 
 
 
